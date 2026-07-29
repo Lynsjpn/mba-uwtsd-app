@@ -1,3 +1,4 @@
-﻿data*.json
+﻿# Jangan pernah unggah file data pribadi ke repo publik ini
+*.json
+mba-uwtsd-data*
 *.bak
-
