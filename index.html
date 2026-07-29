@@ -1,0 +1,713 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBA UWTSD — System</title>
+<style>
+:root{
+  --bg:#f6f7fb; --card:#ffffff; --ink:#1c2434; --sub:#5b6478; --line:#e4e8f0;
+  --acc:#2b4c9b; --acc2:#0e9f6e; --warn:#d97706; --bad:#dc2626; --chip:#eef2fa;
+  --alert-bg:#fff8ed; --alertred-bg:#fef2f2; --accT:#2b4c9b;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#12161f;--card:#1a2130;--ink:#e7ecf5;--sub:#9aa5bb;--line:#2a3347;
+    --chip:#232d42;--alert-bg:#2a2413;--alertred-bg:#2d1a1a;--accT:#8fb0f5;}
+}
+:root[data-theme="dark"]{--bg:#12161f;--card:#1a2130;--ink:#e7ecf5;--sub:#9aa5bb;--line:#2a3347;
+  --chip:#232d42;--alert-bg:#2a2413;--alertred-bg:#2d1a1a;--accT:#8fb0f5;}
+:root[data-theme="light"]{--bg:#f6f7fb;--card:#ffffff;--ink:#1c2434;--sub:#5b6478;--line:#e4e8f0;
+  --chip:#eef2fa;--alert-bg:#fff8ed;--alertred-bg:#fef2f2;--accT:#2b4c9b;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Hiragino Sans","Yu Gothic UI",sans-serif}
+body{background:var(--bg);color:var(--ink);padding-bottom:60px}
+header{background:linear-gradient(135deg,#20355f,#2b4c9b);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+header h1{font-size:1.15rem;font-weight:700}
+header p{font-size:.78rem;opacity:.85;margin-top:2px}
+.langs button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:6px;padding:4px 10px;margin-left:4px;cursor:pointer;font-size:.78rem}
+.langs button.on{background:#fff;color:#2b4c9b;font-weight:700}
+nav{display:flex;gap:4px;background:#20355f;padding:0 12px;overflow-x:auto}
+nav button{background:none;border:none;color:#cdd8f0;padding:10px 14px;font-size:.85rem;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.active{color:#fff;border-color:#7fd1ae;font-weight:600}
+main{max-width:1000px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{font-size:1rem;margin-bottom:10px;color:var(--accT)}
+.grid{display:grid;gap:12px}
+@media(min-width:760px){.grid.c2{grid-template-columns:1fr 1fr}.grid.c3{grid-template-columns:1fr 1fr 1fr}}
+.big{font-size:2rem;font-weight:800;color:var(--accT)}
+.sub{font-size:.78rem;color:var(--sub)}
+.chip{display:inline-block;background:var(--chip);border-radius:20px;padding:2px 10px;font-size:.75rem;margin:2px;color:var(--accT)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{background:var(--chip);text-align:left;padding:7px 8px;font-size:.75rem;color:var(--sub)}
+td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:middle}
+input,select,textarea{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:.85rem;background:var(--card);color:var(--ink);width:100%}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc2)}
+input[type=date],input[type=number]{width:auto}
+button.btn{background:var(--acc);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.85rem;cursor:pointer}
+button.btn.green{background:var(--acc2)} button.btn.gray{background:#8a93a6} button.btn.small{padding:4px 10px;font-size:.75rem}
+.bar{background:var(--line);border-radius:8px;height:10px;overflow:hidden}
+.bar>div{height:100%;background:var(--acc2);transition:width .3s}
+.done{text-decoration:line-through;color:var(--sub)}
+.alert{border-left:4px solid var(--warn);background:var(--alert-bg);padding:10px 12px;border-radius:8px;font-size:.85rem;margin-bottom:10px}
+.alert.red{border-color:var(--bad);background:var(--alertred-bg)}
+.del{color:var(--bad);cursor:pointer;font-weight:700;padding:0 6px}
+.small-note{font-size:.72rem;color:var(--sub);margin-top:6px}
+footer{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding:8px 16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+a{color:var(--accT)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1 id="hTitle"></h1><p id="hTag"></p></div>
+  <div class="langs" id="langs"></div>
+</header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<footer>
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%">
+    <button class="btn green" onclick="exportJSON()" id="btnExp"></button>
+    <button class="btn gray" onclick="document.getElementById('imp').click()" id="btnImp"></button>
+    <input type="file" id="imp" accept=".json" style="display:none" onchange="importJSON(event)">
+  </div>
+  <div class="small-note" id="bkNote" style="text-align:center;width:100%"></div>
+</footer>
+
+<script>
+/* ================= I18N ================= */
+const I18N={
+id:{
+  title:"🎓 MBA UWTSD × Human Academy — Sistem Manajemen",
+  tag:"Care × System × Culture | Data tersimpan otomatis di browser INI. Pindah perangkat: Ekspor → Impor JSON.",
+  tabs:{dash:"📊 Dashboard",daftar:"📁 Pendaftaran",draf:"📝 Draf",dana:"💰 Pendanaan",kuliah:"📚 Perkuliahan",tesis:"🎓 Tesis",me:"👤 My Page"},
+  drafTitle:"📝 Menu Draf — periksa dulu sebelum masuk Word",
+  drafIntro:"Klik nama draf untuk membaca isinya. Tombol <b>Salin</b> menaruh teks di clipboard → langsung tempel (Ctrl+V) ke Word. Angka 字 = jumlah karakter, dipakai untuk mengecek batas form.",
+  drafCopy:"📋 Salin",drafCopyAll:"📋 Salin semua bagian",drafCopied:"✅ Tersalin!",drafCopyFail:"Gagal menyalin — pilih teksnya lalu Ctrl+C",
+  drafChars:"字",drafLimit:"batas",drafOver:"⚠️ melebihi batas",drafOk:"✅ dalam batas",
+  drafSrc:"File sumber:",drafStatus:"Status:",drafNote:"Catatan:",drafSelect:"Pilih draf:",
+  drafEmpty:"Draf belum dimuat di perangkat ini. Klik <b>📥 Buka Data</b> di bawah halaman, lalu pilih file <code>mba-uwtsd-data.json</code> dari Google Drive (folder MBA_UWTSD). Setelah itu semua draf dan isian Anda muncul, dan tersimpan di perangkat ini — cukup sekali.",
+  drafWhere:"📍 Draf ini tersimpan di mana?",
+  drafWhereBody:"Teks draf tertanam <b>langsung di dalam file sistem ini</b> (MBA-Dashboard.html / versi online), bukan di localStorage — jadi selalu ikut ke perangkat mana pun Anda membukanya, dan tidak akan hilang walau data lain di-reset.<br><br>Naskah aslinya (yang bisa diedit) ada sebagai file Markdown di Google Drive:<br>📁 <code>MBA_UWTSD / 01_Pendaftaran /</code> — lihat baris <i>File sumber</i> pada tiap draf di bawah.<br>Semuanya juga tersalin di GitHub (repo private) sebagai cadangan.<br><br><b>Kalau minta Claude mengubah draf</b>, yang diperbarui adalah file .md itu, lalu sistem ini di-build ulang — jadi selalu buka tab ini untuk melihat versi terbaru.",
+  exp:"💾 Simpan Data",imp:"📥 Buka Data",add:"+",days:"hari",late:"LEWAT",todayIs:"HARI INI",left:"TINGGAL",
+  bkNote:"💾 = unduh file cadangan (mba-uwtsd-data.json) → simpan ke folder MBA_UWTSD di Google Drive. Di perangkat lain: 📥 pilih file itu. Selesai.",
+  bkAlert:d=>`<b>💾 Ingat backup:</b> sudah ${d} hari data tidak disimpan. Klik tombol <b>💾 Simpan Data</b> di bawah, lalu taruh filenya di folder MBA_UWTSD (Google Drive).`,
+  cdIntake:"— mulai kuliah",intakeLbl:"Tanggal intake:",cdHW:"⏰ Deadline Hello Work (intake −14 hari)",
+  hwNote:"キャリコン + 受給資格確認 harus SELESAI (ideal: 1 bulan sebelum)",
+  subsidy:"Potensi subsidi 給付金",subsidyNote:"dari total ±¥3,43jt (bayar sekaligus) — telat prosedur = hangus",
+  payAlert:d=>`<b>🔥 ${d}:</b> Bayar 選考料 ¥36.000. Nomor rekening & opsi kartu kredit ada di tab <b>Pendaftaran → Data Pengelola</b>. Setelah bayar, balas email 事務局.`,
+  hwAlert:d=>`<b>PERHATIAN:</b> Deadline Hello Work kurang dari ${d} hari. Slot キャリアコンサルティング bisa penuh 1–3 minggu — booking SEKARANG jika belum.`,
+  pBerkas:"Berkas pendaftaran",pHW:"Prosedur Hello Work",pModul:"Modul kuliah",pctDone:"% selesai",pctPass:"% lulus",
+  weekly:"✅ Aksi minggu ini",msNext:"🗓 Milestone berikutnya",msAll:"Kelola lengkap di tab Pendaftaran",msDone:"Semua milestone selesai 🎉",
+  brand:"🏷 Personal Branding (pegangan semua dokumen)",
+  brandChips:["🩺 Care — empati klinis keperawatan → employee well-being","⚙️ System — shikumika, sistem 10.000+ baris dgn AI","🌏 Culture — memimpin tim 5 negara, jembatan JP–ASEAN"],
+  brandText:'"HR yang merawat manusia seperti perawat, membangun sistem seperti engineer, dan menjembatani budaya seperti diplomat." — MBA menambah lapisan strategi & finance.',
+  routeAlert:"Jalur Anda: <b>6+ thn kerja + 2+ thn manajemen</b> (tanpa sarjana). Bukti manajemen wajib eksplisit di 職務経歴書. Wawancara: online, bahasa Jepang. Surat rekomendasi & TOEFL tidak diperlukan.",
+  ckTitle:"📋 Checklist berkas resmi",colDoc:"Berkas",colStatus:"Status",colNote:"Catatan",
+  st:{Belum:"Belum",Draf:"Draf",Selesai:"Selesai"},
+  msTitle:"🗓 Milestone pendaftaran",colMs:"Milestone",colTarget:"Target",msPh:"Milestone baru...",
+  orgTitle:"🏢 Data Pengelola (UWTSD MBA事務局)",
+  orgNote:"Sumber: email 事務局. Etika: balas email dalam 1–2 hari kerja, format keigo.",
+  schedTitle:"📅 Jadwal seleksi KONKRET dari 事務局 (email 26/7)",
+  schedBody:"【1】26/7 出願意思表示 + 選考料 ¥36.000 — <b>batas bayar 28/7 (Selasa)</b><br>【2】3/8 仮提出 berkas lengkap — <b>format Word (JANGAN PDF)</b>, lampiran balasan email<br>【3】5/8 feedback revisi 事務局 (tanggal wawancara diatur setelah 仮提出)<br>【4】Awal Agustus: 本提出 (data)<br>【5】Pertengahan Agustus: kirim fisik via pos<br>【6】Pertengahan Agustus: 選考面接<br>【7】Akhir Agustus: 合否通知<br>Jadwal bisa maju/mundur (前倒し/後ろ倒し可).<br><br><b>Panduan 職務経歴書:</b> fokus jabatan manajerial terkini, 職務詳細 ±500字, struktur: 勤務先名・担当部署・役職 → 職務内容 → 【規模】→【売上規模】→【部署概要】→【自身のメインタスク】. Harus jelas bagi orang ketiga.",
+  totPlan:"Total rencana biaya",totPaid:"Sudah dibayar",totKyufu:"給付金 sudah cair",kyufuMax:"maks ¥1.280.000",
+  reimAlert:"給付金 = <b>reimbursement</b>: bayar dulu → klaim tiap 6 bulan (dalam 1 bulan setelah tiap periode). Simpan SEMUA 領収書 & 受講証明書. Kehadiran ≥80%/semester wajib. Subsidi perusahaan mengurangi dasar 給付金 — koordinasikan dulu.",
+  payTitle:"💴 Log pembayaran",colDate:"Tanggal",colItem:"Item",colAmt:"Jumlah (¥)",payPh:"Item baru...",
+  hwTitle:"🏛 Prosedur Hello Work (給付金)",
+  hwFoot:"指定番号: 1312057-2510011-5 — verifikasi di kyufu.mhlw.go.jp/kensaku/ | Booking キャリコン: carigaku.mhlw.go.jp",
+  kyufuTitle:"📥 Log klaim 給付金 (支給申請)",colPeriod:"Periode",colClaim:"Tgl klaim",colPaid:"Cair (¥)",
+  learnAlert:"Format: Zoom live, Sabtu ±3x/bulan (3 minggu on, 1 off) + tugas mandiri. Beban ≥2.200 jam / 2 thn ≈ <b>20+ jam/minggu</b>. Rekaman tersedia jika absen, tapi kehadiran ≥80% wajib utk kredit & 給付金.",
+  modTitle:"📚 Modul (180 kredit: 6×20 + tesis 60)",colMod:"Modul",colType:"Jenis",
+  mt:{Wajib:"Wajib",Pilihan:"Pilihan",Tesis:"Tesis"},
+  ms2:{Belum:"Belum",Berjalan:"Berjalan",Tugas:"Tugas",Lulus:"Lulus"},
+  modNote:"Kaitkan tiap modul ke masalah nyata kantor. Ide tesis muncul? Catat di tab Tesis.",
+  logTitle:"⏱ Log belajar — total:",hours:"jam",colHours:"Jam",colWhat:"Materi",logPh:"Apa yang dipelajari...",logBtn:"+ Catat",
+  logMore:(a,b)=>`Menampilkan ${a} terbaru dari ${b}`,
+  blockTitle:"🕐 Blok waktu mingguan (working mother: mulai realistis)",
+  blocks:["Pagi 05:30–06:30 ×3","Malam 21:30–23:00 ×3","Sabtu: kelas + 2–3 jam","Minggu: 2 jam + review 15 mnt"],
+  blockNote:"Aturan: AI sebagai tutor, bukan penulis (academic integrity UWTSD ketat).",
+  thAlert:"修士論文: <b>bahasa Jepang, maks 19.500字</b>, 60 kredit, bimbingan 1-on-1 (3 jam × 10 sesi), topik dari bisnis sendiri. Terkonsentrasi ±6 bulan terakhir — kumpulkan ide dari modul pertama!",
+  thTitle:"💡 Kandidat topik",colTopic:"Topik",colScore:"Skor",thPh:"Ide topik baru (catat begitu muncul di kelas)...",
+  thCrit:"🧭 Kriteria memilih topik final",
+  crits:["Akses data nyata (izin tertulis perusahaan)","Relevan ke karir Global HR/IT","Sempit & bisa dijawab","Disetujui pembimbing"],
+  critNote:"Template proposal & timeline mundur: 04_Tesis/template_proposal.md",
+  meTitle:"👤 Data Diri",meKeyPh:"Label baru...",meValPh:"Isi...",
+  meBrand:"🏷 Personal Branding — Care × System × Culture",
+  meBrandJP:"<b>Versi Jepang (utk esai/wawancara):</b> 介護で培った共感力・観察力・危機対応力を、従業員のウェルビーイングと健全な組織文化づくりに活かす。仕組み化とAI活用で「人に最も優しく、最も合理的な人事」を実現する。",
+  meBrandNote:"Latar care work = ASAL kekuatan empati, bukan kelemahan. Narasi: 介護福祉士 → HR talenta asing → pembangun sistem AI → (MBA) → Strategic Global HR di IT Jepang.",
+  sgTitle:"💡 Suggestion — disesuaikan karakter pembelajaran UWTSD",sgPh:"Tambah suggestion baru...",
+  sgNote:"Dasar: case method + Sabtu 3-on/1-off + cohort eksekutif 42–43 thn + tesis JP ≤19.500字 + 3 kursus persiapan gratis 事務局."
+},
+en:{
+  title:"🎓 UWTSD MBA × Human Academy — Management System",
+  tag:"Care × System × Culture | Data auto-saves in THIS browser. Moving devices: Export → Import JSON.",
+  tabs:{dash:"📊 Dashboard",daftar:"📁 Application",draf:"📝 Drafts",dana:"💰 Funding",kuliah:"📚 Coursework",tesis:"🎓 Dissertation",me:"👤 My Page"},
+  drafTitle:"📝 Draft menu — review before it goes into Word",
+  drafIntro:"Click a draft name to read it. <b>Copy</b> puts the text on your clipboard — paste straight into Word (Ctrl+V). The 字 number is the character count, for checking form limits.",
+  drafCopy:"📋 Copy",drafCopyAll:"📋 Copy all sections",drafCopied:"✅ Copied!",drafCopyFail:"Copy failed — select the text and press Ctrl+C",
+  drafChars:"chars",drafLimit:"limit",drafOver:"⚠️ over the limit",drafOk:"✅ within limit",
+  drafSrc:"Source file:",drafStatus:"Status:",drafNote:"Notes:",drafSelect:"Choose a draft:",
+  drafEmpty:"No drafts loaded on this device yet. Click <b>📥 Load Data</b> at the bottom of the page and pick <code>mba-uwtsd-data.json</code> from Google Drive (MBA_UWTSD folder). Your drafts and entries will then appear and stay on this device — you only need to do this once.",
+  drafWhere:"📍 Where are these drafts stored?",
+  drafWhereBody:"The draft text is embedded <b>directly inside this system file</b> (MBA-Dashboard.html / the online version), not in localStorage — so it travels with you to any device and survives a data reset.<br><br>The editable originals are Markdown files on Google Drive:<br>📁 <code>MBA_UWTSD / 01_Pendaftaran /</code> — see the <i>Source file</i> line on each draft below.<br>Everything is also mirrored to GitHub (private repo) as a backup.<br><br><b>When you ask Claude to revise a draft</b>, the .md file is updated and this system is rebuilt — so always open this tab to see the latest version.",
+  exp:"💾 Save Data",imp:"📥 Load Data",add:"+",days:"days",late:"OVERDUE",todayIs:"TODAY",left:"",
+  bkNote:"💾 = downloads a backup file (mba-uwtsd-data.json) → put it in the MBA_UWTSD folder on Google Drive. On another device: 📥 pick that file. Done.",
+  bkAlert:d=>`<b>💾 Backup reminder:</b> ${d} days since your last save. Click <b>💾 Save Data</b> below and drop the file into the MBA_UWTSD folder (Google Drive).`,
+  cdIntake:"— classes begin",intakeLbl:"Intake date:",cdHW:"⏰ Hello Work deadline (intake −14 days)",
+  hwNote:"Career consulting + benefit eligibility check MUST be done (ideally 1 month before)",
+  subsidy:"Potential 給付金 subsidy",subsidyNote:"of ±¥3.43M total (lump-sum) — missing the procedure forfeits it",
+  payAlert:d=>`<b>🔥 ${d}:</b> Pay the ¥36,000 screening fee. Bank details and the credit-card option are in the <b>Application → Administrator info</b> tab. Then reply to the office's email.`,
+  hwAlert:d=>`<b>ATTENTION:</b> Hello Work deadline in under ${d} days. Career-consulting slots can fill up 1–3 weeks ahead — book NOW if you haven't.`,
+  pBerkas:"Application documents",pHW:"Hello Work procedure",pModul:"Course modules",pctDone:"% done",pctPass:"% passed",
+  weekly:"✅ This week's actions",msNext:"🗓 Upcoming milestones",msAll:"Manage fully in the Application tab",msDone:"All milestones done 🎉",
+  brand:"🏷 Personal Branding (anchor for all documents)",
+  brandChips:["🩺 Care — clinical empathy from care work → employee well-being","⚙️ System — shikumika: 10,000+ line system built with AI","🌏 Culture — leading a 5-country team, JP–ASEAN bridge"],
+  brandText:'"HR that cares for people like a caregiver, builds systems like an engineer, and bridges cultures like a diplomat." — The MBA adds the strategy & finance layer.',
+  routeAlert:"Your route: <b>6+ yrs experience + 2+ yrs management</b> (non-degree). Management evidence must be explicit in the CV (職務経歴書). Interview: online, in Japanese. No recommendation letters, no TOEFL.",
+  ckTitle:"📋 Official document checklist",colDoc:"Document",colStatus:"Status",colNote:"Notes",
+  st:{Belum:"To do",Draf:"Draft",Selesai:"Done"},
+  msTitle:"🗓 Application milestones",colMs:"Milestone",colTarget:"Target",msPh:"New milestone...",
+  orgTitle:"🏢 Administrator info (UWTSD MBA Office)",
+  orgNote:"Source: emails from the programme office. Etiquette: reply within 1–2 business days, keigo format.",
+  schedTitle:"📅 CONCRETE selection schedule from the programme office (email, 26 Jul)",
+  schedBody:"【1】26 Jul: declare intent + ¥36,000 fee — <b>payment due 28 Jul (Tue)</b><br>【2】3 Aug: preliminary submission of all documents — <b>Word format (NOT PDF)</b>, attached to an email reply<br>【3】5 Aug: office feedback (interview date set after preliminary submission)<br>【4】Early Aug: final data submission<br>【5】Mid Aug: mail physical documents<br>【6】Mid Aug: selection interview<br>【7】Late Aug: result<br>Schedule can shift either way.<br><br><b>CV guidance:</b> focus on the current managerial role, job detail ±500 chars (JP), structure: company/dept/title → duties → scale → revenue → dept overview → own main tasks. Must be clear to a third party.",
+  totPlan:"Planned total cost",totPaid:"Paid so far",totKyufu:"Subsidy received",kyufuMax:"max ¥1,280,000",
+  reimAlert:"The subsidy is a <b>reimbursement</b>: pay first → claim every 6 months (within 1 month after each period). Keep ALL receipts & attendance certificates. ≥80% attendance per semester required. Employer subsidies reduce the claimable base — coordinate first.",
+  payTitle:"💴 Payment log",colDate:"Date",colItem:"Item",colAmt:"Amount (¥)",payPh:"New item...",
+  hwTitle:"🏛 Hello Work procedure (subsidy)",
+  hwFoot:"Course ID: 1312057-2510011-5 — verify at kyufu.mhlw.go.jp/kensaku/ | Book consulting: carigaku.mhlw.go.jp",
+  kyufuTitle:"📥 Subsidy claim log (支給申請)",colPeriod:"Period",colClaim:"Claim date",colPaid:"Received (¥)",
+  learnAlert:"Format: live Zoom, ~3 Saturdays/month (3 weeks on, 1 off) + self-study. Load ≥2,200 hrs / 2 yrs ≈ <b>20+ hrs/week</b>. Recordings available if absent, but ≥80% attendance required for credits & subsidy.",
+  modTitle:"📚 Modules (180 credits: 6×20 + dissertation 60)",colMod:"Module",colType:"Type",
+  mt:{Wajib:"Core",Pilihan:"Elective",Tesis:"Dissertation"},
+  ms2:{Belum:"Not started",Berjalan:"Ongoing",Tugas:"Assignment",Lulus:"Passed"},
+  modNote:"Tie every module to a real problem at work. Dissertation idea? Note it in the Dissertation tab.",
+  logTitle:"⏱ Study log — total:",hours:"hrs",colHours:"Hours",colWhat:"Content",logPh:"What did you study...",logBtn:"+ Log",
+  logMore:(a,b)=>`Showing latest ${a} of ${b}`,
+  blockTitle:"🕐 Weekly time blocks (working mother: start realistic)",
+  blocks:["Morning 05:30–06:30 ×3","Evening 21:30–23:00 ×3","Saturday: class + 2–3 hrs","Sunday: 2 hrs + 15-min review"],
+  blockNote:"Rule: AI as tutor, not writer (UWTSD academic integrity is strict).",
+  thAlert:"Dissertation: <b>in Japanese, max 19,500 chars</b>, 60 credits, 1-on-1 supervision (3 hrs × 10 sessions), topic from your own business. Concentrated in the final ~6 months — collect ideas from module one!",
+  thTitle:"💡 Topic candidates",colTopic:"Topic",colScore:"Score",thPh:"New topic idea (note it the moment it appears in class)...",
+  thCrit:"🧭 Criteria for the final topic",
+  crits:["Real data access (written company consent)","Relevant to Global HR/IT career","Narrow & answerable","Supervisor-approved"],
+  critNote:"Proposal template & backward timeline: 04_Tesis/template_proposal.md",
+  meTitle:"👤 Personal Data",meKeyPh:"New label...",meValPh:"Value...",
+  meBrand:"🏷 Personal Branding — Care × System × Culture",
+  meBrandJP:"<b>Japanese version (for essay/interview):</b> 介護で培った共感力・観察力・危機対応力を、従業員のウェルビーイングと健全な組織文化づくりに活かす。仕組み化とAI活用で「人に最も優しく、最も合理的な人事」を実現する。",
+  meBrandNote:"Care-work background = the SOURCE of empathy, not a weakness. Narrative: certified care worker → HR for foreign talent → AI system builder → (MBA) → Strategic Global HR in Japanese IT.",
+  sgTitle:"💡 Suggestions — matched to how UWTSD teaches",sgPh:"Add a new suggestion...",
+  sgNote:"Basis: case method + Saturdays 3-on/1-off + executive cohort (avg 42–43) + JP dissertation ≤19,500 chars + 3 free prep courses from the office."
+},
+ja:{
+  title:"🎓 UWTSD MBA × ヒューマンアカデミー — 管理システム",
+  tag:"Care × System × Culture｜データはこのブラウザに自動保存。端末を移る際はJSONエクスポート→インポート。",
+  tabs:{dash:"📊 ダッシュボード",daftar:"📁 出願",draf:"📝 原稿",dana:"💰 資金",kuliah:"📚 受講",tesis:"🎓 修士論文",me:"👤 マイページ"},
+  drafTitle:"📝 原稿メニュー — Wordに入れる前の確認用",
+  drafIntro:"原稿名をクリックすると本文が表示されます。<b>コピー</b>でクリップボードに入るので、Wordにそのまま貼り付け（Ctrl+V）できます。「字」は文字数で、様式の字数制限の確認に使えます。",
+  drafCopy:"📋 コピー",drafCopyAll:"📋 全セクションをコピー",drafCopied:"✅ コピーしました",drafCopyFail:"コピーできませんでした — 本文を選択してCtrl+Cしてください",
+  drafChars:"字",drafLimit:"上限",drafOver:"⚠️ 上限超過",drafOk:"✅ 上限内",
+  drafSrc:"元ファイル：",drafStatus:"状態：",drafNote:"メモ：",drafSelect:"原稿を選択：",
+  drafEmpty:"この端末には原稿が読み込まれていません。画面下の<b>📥 データ読込</b>から、Google Drive（MBA_UWTSDフォルダ）の <code>mba-uwtsd-data.json</code> を選択してください。読み込むと原稿と入力内容が表示され、この端末に保存されます（初回のみ）。",
+  drafWhere:"📍 この原稿はどこに保存されている？",
+  drafWhereBody:"原稿の本文は<b>このシステムファイル自体（MBA-Dashboard.html／オンライン版）に埋め込まれています</b>。localStorageではないため、どの端末で開いても必ず表示され、他のデータをリセットしても消えません。<br><br>編集可能な原本はGoogle Drive上のMarkdownファイルです：<br>📁 <code>MBA_UWTSD / 01_Pendaftaran /</code> — 各原稿の<i>元ファイル</i>欄を参照。<br>GitHub（プライベートリポジトリ）にもバックアップ済み。<br><br><b>Claudeに原稿の修正を依頼した場合</b>、その.mdファイルが更新され、このシステムが再ビルドされます。最新版は必ずこのタブで確認してください。",
+  exp:"💾 データ保存",imp:"📥 データ読込",add:"+",days:"日",late:"超過",todayIs:"本日",left:"あと",
+  bkNote:"💾 ＝バックアップファイル（mba-uwtsd-data.json）をダウンロード → Google DriveのMBA_UWTSDフォルダへ。別端末では 📥 でそのファイルを選択するだけ。",
+  bkAlert:d=>`<b>💾 バックアップ：</b>前回の保存から${d}日経過。下の<b>💾 データ保存</b>を押し、ファイルをMBA_UWTSDフォルダ（Google Drive）へ。`,
+  cdIntake:"— 開講まで",intakeLbl:"入学日：",cdHW:"⏰ ハローワーク期限（入学−14日）",
+  hwNote:"キャリコン＋受給資格確認を完了必須（理想は1カ月前）",
+  subsidy:"給付金の想定額",subsidyNote:"総額約343万円（一括）に対して — 手続き遅れは失権",
+  payAlert:d=>`<b>🔥 ${d}：</b>選考料 ¥36,000 のご納入。振込先・カード決済の案内は<b>「出願」タブの事務局情報</b>を参照。納入後、事務局へご返信。`,
+  hwAlert:d=>`<b>注意：</b>ハローワーク期限まで${d}日未満。キャリアコンサルティングの予約は1〜3週間待ちの場合あり — 未予約なら今すぐ。`,
+  pBerkas:"出願書類",pHW:"ハローワーク手続き",pModul:"受講モジュール",pctDone:"% 完了",pctPass:"% 修了",
+  weekly:"✅ 今週のアクション",msNext:"🗓 直近のマイルストーン",msAll:"詳細は「出願」タブで管理",msDone:"マイルストーン全て完了 🎉",
+  brand:"🏷 パーソナルブランディング（全書類の軸）",
+  brandChips:["🩺 Care — 介護で培った共感力 → 従業員ウェルビーイング","⚙️ System — 仕組み化：AIで1万行超のシステムを構築","🌏 Culture — 5カ国チームを率いる日・ASEANの架け橋"],
+  brandText:"「介護職のように人をケアし、エンジニアのように仕組みを作り、外交官のように文化をつなぐ人事」— MBAで戦略・ファイナンスの層を加える。",
+  routeAlert:"出願区分：<b>実務経験6年以上＋管理職経験2年以上</b>（学位不問ルート）。管理職経験は職務経歴書に明記必須。面接：オンライン・日本語。推薦状・TOEFL不要。",
+  ckTitle:"📋 出願書類チェックリスト",colDoc:"書類",colStatus:"状態",colNote:"メモ",
+  st:{Belum:"未着手",Draf:"下書き",Selesai:"完了"},
+  msTitle:"🗓 出願マイルストーン",colMs:"マイルストーン",colTarget:"期日",msPh:"新規マイルストーン...",
+  orgTitle:"🏢 事務局情報（UWTSD MBA事務局）",
+  orgNote:"出典：事務局メール。マナー：1〜2営業日以内に敬語で返信。",
+  schedTitle:"📅 事務局からの確定選考スケジュール（メール 7/26）",
+  schedBody:"【1】7/26 出願意思表示＋選考料 ¥36,000 — <b>納入期限 7/28（火）</b><br>【2】8/3 出願書類一式データ仮提出 — <b>Word形式（PDF不可）</b>、メール返信に添付<br>【3】8/5 事務局より修正項目の案内（面接日は仮提出後に設定）<br>【4】8月上旬：本提出（データ）<br>【5】8月中旬：必要物一式を郵送<br>【6】8月中旬：選考面接<br>【7】8月下旬：合否通知<br>※前倒し／後ろ倒し可。<br><br><b>職務経歴書の指針：</b>直近の管理職を重点に、職務詳細は和文500字程度。構成：勤務先名・担当部署・役職 → 職務内容 →【規模】→【売上規模】→【部署概要】→【自身のメインタスク】。第三者に明確に伝わること。",
+  totPlan:"費用計画総額",totPaid:"支払済み",totKyufu:"給付金受給済み",kyufuMax:"上限 ¥1,280,000",
+  reimAlert:"給付金は<b>後払い（償還方式）</b>：先に支払い → 6カ月ごとに申請（各期間終了後1カ月以内）。領収書・受講証明書は全て保管。各学期出席率80%以上必須。会社補助分は給付対象経費から除外 — 事前に調整を。",
+  payTitle:"💴 支払記録",colDate:"日付",colItem:"項目",colAmt:"金額（¥）",payPh:"新規項目...",
+  hwTitle:"🏛 ハローワーク手続き（給付金）",
+  hwFoot:"指定番号：1312057-2510011-5 — kyufu.mhlw.go.jp/kensaku/ で確認｜キャリコン予約：carigaku.mhlw.go.jp",
+  kyufuTitle:"📥 給付金申請記録（支給申請）",colPeriod:"期間",colClaim:"申請日",colPaid:"受給額（¥）",
+  learnAlert:"形式：Zoomライブ、土曜 月3回程度（3週連続＋1週休み）＋自習。総学習 2,200時間以上／2年 ≈ <b>週20時間以上</b>。欠席時は録画視聴可、ただし単位・給付金には出席率80%以上必須。",
+  modTitle:"📚 モジュール（180単位：6×20＋論文60）",colMod:"モジュール",colType:"区分",
+  mt:{Wajib:"必修",Pilihan:"選択",Tesis:"論文"},
+  ms2:{Belum:"未着手",Berjalan:"受講中",Tugas:"課題中",Lulus:"修了"},
+  modNote:"各モジュールを職場の実課題と結びつける。論文のアイデアが出たら「修士論文」タブへ。",
+  logTitle:"⏱ 学習ログ — 合計：",hours:"時間",colHours:"時間",colWhat:"内容",logPh:"学習内容...",logBtn:"＋記録",
+  logMore:(a,b)=>`全${b}件中、最新${a}件を表示`,
+  blockTitle:"🕐 週間タイムブロック（ワーキングマザー：現実的に）",
+  blocks:["朝 05:30–06:30 ×3","夜 21:30–23:00 ×3","土曜：授業＋2〜3時間","日曜：2時間＋週次レビュー15分"],
+  blockNote:"ルール：AIは家庭教師であり代筆者ではない（UWTSDのアカデミック・インテグリティは厳格）。",
+  thAlert:"修士論文：<b>日本語・19,500字以内</b>、60単位、1対1指導（3時間×10回）、テーマは自身のビジネスから。最後の約6カ月に集中 — アイデアは初回モジュールから収集！",
+  thTitle:"💡 テーマ候補",colTopic:"テーマ",colScore:"評価",thPh:"新しいテーマ案（授業中に浮かんだら即メモ）...",
+  thCrit:"🧭 最終テーマの選定基準",
+  crits:["実データへのアクセス（会社の書面承諾）","グローバルHR/ITキャリアとの関連","範囲が狭く答えが出せる","指導教員の承認"],
+  critNote:"提案書テンプレと逆算スケジュール：04_Tesis/template_proposal.md",
+  meTitle:"👤 基本情報",meKeyPh:"新規ラベル...",meValPh:"内容...",
+  meBrand:"🏷 パーソナルブランディング — Care × System × Culture",
+  meBrandJP:"<b>日本語版（エッセイ・面接用）：</b>介護で培った共感力・観察力・危機対応力を、従業員のウェルビーイングと健全な組織文化づくりに活かす。仕組み化とAI活用で「人に最も優しく、最も合理的な人事」を実現する。",
+  meBrandNote:"介護のバックグラウンドは共感力の源泉であり弱みではない。ナラティブ：介護福祉士 → 外国人材HR → AIシステム構築者 →（MBA）→ 日本のIT業界の戦略人事へ。",
+  sgTitle:"💡 提案 — UWTSDの学習スタイルに合わせて",sgPh:"新しい提案を追加...",
+  sgNote:"根拠：ケースメソッド＋土曜3週連続/1週休＋平均42〜43歳の実務家コホート＋日本語論文19,500字以内＋事務局の無料準備講座3種。"
+}
+};
+let LANG=localStorage.getItem("mba_lang")||"id";
+const T=()=>I18N[LANG];
+
+/* ============================================================
+   BLOK DATA VERSI PUBLIK — tidak memuat data pribadi apa pun.
+   Dipakai oleh build-public.ps1 untuk menggantikan blok data di
+   MBA-Dashboard.html sebelum diunggah ke repo GitHub public.
+
+   Yang DIKOSONGKAN di sini: nama, kontak, alamat, perusahaan,
+   riwayat kerja, isi draf/esai, ide tesis, nama staf 事務局,
+   nomor rekening, jadwal pribadi.
+   Yang DIPERTAHANKAN: informasi program yang memang publik di
+   situs resmi (biaya, nama modul & dosen, struktur 給付金,
+   daftar berkas) + kerangka aplikasi.
+   ============================================================ */
+const SEED = {
+  settings:{ intakeDate:"2026-10-01", targetLabel:"Intake" },
+  weeklyActions:[],
+  milestones:[
+    {t:"【1】出願意思表示 + 選考料 ¥36,000",due:"",d:false},
+    {t:"【2】出願書類一式データ仮提出（Word形式）",due:"",d:false},
+    {t:"【3】事務局より修正項目の案内",due:"",d:false},
+    {t:"【4】出願書類データ本提出",due:"",d:false},
+    {t:"【5】必要物一式を郵送",due:"",d:false},
+    {t:"【6】選考面接（オンライン・日本語）",due:"",d:false},
+    {t:"【7】合否通知",due:"",d:false},
+    {t:"受給資格確認（ハローワーク）完了 — 開講14日前まで",due:"",d:false},
+    {t:"入学料・受講料の納入 → 開講",due:"",d:false}
+  ],
+  berkas:[
+    {t:"入学申請用紙",s:"Belum",n:""},
+    {t:"UWTSD指定申請用紙",s:"Belum",n:""},
+    {t:"写真2枚（3.0×4.0cm、3ヶ月以内）",s:"Belum",n:""},
+    {t:"本人確認書類",s:"Belum",n:""},
+    {t:"学歴に応じた証明書類",s:"Belum",n:""},
+    {t:"志望動機（入学申請用紙 セクション２）",s:"Belum",n:""},
+    {t:"職務経歴書（英文欄も必須）",s:"Belum",n:""},
+    {t:"選考料 ¥36,000 振込記録",s:"Belum",n:""},
+    {t:"返信用封筒（¥140切手）",s:"Belum",n:""}
+  ],
+  helloWork:[
+    {t:"訓練前キャリアコンサルティングの予約（carigaku.mhlw.go.jp）",d:false},
+    {t:"ジョブ・カード作成＋コンサルタントの署名",d:false},
+    {t:"必要書類の準備（マイナンバーカード／在留カード、写真2枚、通帳、雇用保険被保険者証）",d:false},
+    {t:"受給資格確認（居住地のハローワーク）— 開講14日前まで",d:false},
+    {t:"受給資格確認通知書の受領・保管",d:false}
+  ],
+  payments:[
+    {dt:"",item:"選考料",amt:36000,paid:false},
+    {dt:"",item:"入学料（1年目 学生登録料を含む）",amt:528000,paid:false},
+    {dt:"",item:"受講料 1年目",amt:1452000,paid:false},
+    {dt:"",item:"教育充実費＋認証費用 1年目",amt:77000,paid:false},
+    {dt:"",item:"学生登録料 2年目（一括払いの場合は免除）",amt:264000,paid:false},
+    {dt:"",item:"受講料 2年目",amt:1452000,paid:false},
+    {dt:"",item:"教育充実費＋認証費用 2年目",amt:77000,paid:false}
+  ],
+  kyufu:[
+    {p:"支給単位期間 1（1〜6ヶ月）— 50%",dt:"",amt:0,done:false},
+    {p:"支給単位期間 2（7〜12ヶ月）— 50%",dt:"",amt:0,done:false},
+    {p:"支給単位期間 3（13〜18ヶ月）— 50%",dt:"",amt:0,done:false},
+    {p:"支給単位期間 4（19〜24ヶ月）— 50%",dt:"",amt:0,done:false},
+    {p:"修了後 +20%（修了証明書から1ヶ月以内）",dt:"",amt:0,done:false},
+    {p:"賃金上昇 +10%（5%以上の上昇）",dt:"",amt:0,done:false}
+  ],
+  modules:[
+    {t:"経営戦略（Strategic Management）",type:"Wajib",s:"Belum",note:""},
+    {t:"Marketing Management",type:"Wajib",s:"Belum",note:""},
+    {t:"組織・人材マネジメント（Organisation & HRM）",type:"Wajib",s:"Belum",note:""},
+    {t:"Finance Management",type:"Wajib",s:"Belum",note:""},
+    {t:"選択科目 1（Innovation / Accounting / Leadership / Negotiation）",type:"Pilihan",s:"Belum",note:""},
+    {t:"選択科目 2（Innovation / Accounting / Leadership / Negotiation）",type:"Pilihan",s:"Belum",note:""},
+    {t:"修士論文（60単位・日本語19,500字以内）",type:"Tesis",s:"Belum",note:""}
+  ],
+  studyLog:[],
+  thesisIdeas:[],
+  contacts:[
+    {k:"Organisasi",v:""},
+    {k:"Staf (PIC)",v:""},
+    {k:"Email",v:""},
+    {k:"Telepon",v:""},
+    {k:"LINE",v:""},
+    {k:"Alamat",v:""},
+    {k:"Rekening 選考料",v:""},
+    {k:"Web / SNS",v:"mba.athuman.com"},
+    {k:"Link 給付金",v:"mba.athuman.com/admission/kyufu/ | carigaku.mhlw.go.jp"},
+    {k:"出願特典",v:""},
+    {k:"Format 仮提出",v:"Word（PDF不可）、メール返信に添付"}
+  ],
+  myFields:[
+    {k:"Nama",v:""},
+    {k:"Email",v:""},
+    {k:"HP",v:""},
+    {k:"Perusahaan",v:""},
+    {k:"Alamat kantor",v:""},
+    {k:"Kewarganegaraan",v:""},
+    {k:"Pendidikan",v:""},
+    {k:"Kualifikasi",v:""},
+    {k:"Riwayat kerja",v:""},
+    {k:"Bahasa",v:""},
+    {k:"Status",v:""},
+    {k:"Target karir",v:""}
+  ],
+  mySuggestions:[
+    {t:"開講前に事務局の無料準備講座を視聴（ファイナンス・アカウンティング基礎／マーケティング基礎／ロジカルライティング）",d:false},
+    {t:"ケースメソッド対策：授業前にケースを2回読み、毎回「意見1つ＋質問1つ」を準備する",d:false},
+    {t:"土曜3週連続＋1週休みのリズムに合わせて、家庭・仕事の予定を先に確保する",d:false},
+    {t:"各モジュールを職場の実課題に結びつけ、論文テーマの候補として記録する",d:false},
+    {t:"出願前の事務局チェック（仮提出→修正→本提出）を必ず活用する",d:false},
+    {t:"アカデミック・インテグリティ：AIは理解を助ける家庭教師として使い、課題の代筆には使わない",d:false}
+  ],
+  drafts:[]
+};
+
+/* Draf tidak disertakan dalam versi publik — dimuat pengguna dari file datanya sendiri. */
+const DRAFTS=[];
+
+/* @DATA-BLOCK-END */
+let curDraf=0;
+/* Draf dipakai dari data (S.drafts) bila ada — supaya versi publik tanpa data pribadi
+   tetap bisa menampilkan draf setelah pengguna memuat filenya sendiri. */
+function activeDrafts(){ return (S&&S.drafts&&S.drafts.length)?S.drafts:DRAFTS; }
+function jchars(s){ return s.replace(/\s/g,"").length; }
+function fallbackCopy(txt,done,selId){
+  const ta=document.createElement("textarea");
+  ta.value=txt; ta.style.position="fixed"; ta.style.top="-1000px"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  let ok=false;
+  try{ ok=document.execCommand("copy"); }catch(e){ ok=false; }
+  document.body.removeChild(ta);
+  if(ok){ done(); return; }
+  // Cadangan terakhir: seleksi teksnya di halaman supaya user cukup menekan Ctrl+C
+  const el=selId?document.getElementById(selId):null;
+  if(el){
+    const r=document.createRange(); r.selectNodeContents(el);
+    const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    el.scrollIntoView({block:"center",behavior:"smooth"});
+  }
+  alert(T().drafCopyFail);
+}
+function flashBtn(btnId){
+  const b=document.getElementById(btnId); if(!b)return;
+  const orig=b.textContent; b.textContent=T().drafCopied;
+  setTimeout(()=>{ const el=document.getElementById(btnId); if(el)el.textContent=orig; },1600);
+}
+function copySection(di,si,btnId){
+  const d=activeDrafts()[di]; const txt=si<0
+    ? d.sections.map(s=>s.h+"\n\n"+s.text).join("\n\n")
+    : d.sections[si].text;
+  const done=()=>flashBtn(btnId);
+  const selId=si<0?null:("txt"+si);
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>fallbackCopy(txt,done,selId));
+  } else fallbackCopy(txt,done,selId);
+}
+
+/* ================= STATE ================= */
+const KEY="mba_uwtsd_system_v1";
+let S = load();
+function load(){
+  try{ const raw=localStorage.getItem(KEY); if(raw){
+    const s=Object.assign(JSON.parse(JSON.stringify(SEED)),JSON.parse(raw));
+    // Draf built-in (versi privat) disalin ke data agar ikut terbawa saat 💾 Simpan Data
+    if((!s.drafts||!s.drafts.length)&&DRAFTS.length) s.drafts=JSON.parse(JSON.stringify(DRAFTS));
+    if(s.schemaVer!==4){
+      s.berkas=JSON.parse(JSON.stringify(SEED.berkas));
+      if(DRAFTS.length) s.drafts=JSON.parse(JSON.stringify(DRAFTS));
+      s.milestones=JSON.parse(JSON.stringify(SEED.milestones));
+      s.weeklyActions=JSON.parse(JSON.stringify(SEED.weeklyActions));
+      s.contacts=JSON.parse(JSON.stringify(SEED.contacts));
+      s.myFields=JSON.parse(JSON.stringify(SEED.myFields));
+      s.mySuggestions=JSON.parse(JSON.stringify(SEED.mySuggestions));
+      s.schemaVer=4;
+    }
+    return s;
+  } }catch(e){}
+  const f=JSON.parse(JSON.stringify(SEED)); f.schemaVer=4;
+  if(DRAFTS.length) f.drafts=JSON.parse(JSON.stringify(DRAFTS));
+  return f;
+}
+function save(){ localStorage.setItem(KEY,JSON.stringify(S)); render(); }
+function setLang(l){ LANG=l; localStorage.setItem("mba_lang",l); document.documentElement.lang=l; render(); }
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="mba-uwtsd-data.json"; a.click();
+  localStorage.setItem("mba_last_export",Date.now()); render();
+}
+function importJSON(ev){
+  const f=ev.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ S=Object.assign(JSON.parse(JSON.stringify(SEED)),JSON.parse(r.result));
+    localStorage.setItem("mba_last_export",Date.now()); save(); alert("OK ✔"); }catch(e){ alert("Invalid file"); } };
+  r.readAsText(f);
+}
+function daysSinceBackup(){
+  const t=Number(localStorage.getItem("mba_last_export")||0);
+  if(!t) return null; // belum pernah backup
+  return Math.floor((Date.now()-t)/86400000);
+}
+
+/* ================= HELPERS ================= */
+const yen=n=>"¥"+Number(n||0).toLocaleString("ja-JP");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function daysTo(dateStr){ if(!dateStr)return null; const d=(new Date(dateStr+"T00:00:00")-new Date().setHours(0,0,0,0))/86400000; return Math.round(d); }
+function pct(list,f){ if(!list.length)return 0; return Math.round(100*list.filter(f).length/list.length); }
+
+/* ================= RENDER ================= */
+let cur="dash";
+function render(){
+  const t=T();
+  document.getElementById("hTitle").textContent=t.title;
+  document.getElementById("hTag").textContent=t.tag;
+  document.getElementById("btnExp").textContent=t.exp;
+  document.getElementById("btnImp").textContent=t.imp;
+  document.getElementById("bkNote").textContent=t.bkNote;
+  document.getElementById("langs").innerHTML=["id","en","ja"].map(l=>`<button class="${LANG===l?'on':''}" onclick="setLang('${l}')">${{id:"ID",en:"EN",ja:"日本語"}[l]}</button>`).join("");
+  document.getElementById("nav").innerHTML=Object.entries(t.tabs).map(([id,l])=>`<button class="${cur===id?'active':''}" onclick="cur='${id}';render()">${l}</button>`).join("");
+  document.getElementById("main").innerHTML={dash:vDash,daftar:vDaftar,draf:vDraf,dana:vDana,kuliah:vKuliah,tesis:vTesis,me:vMe}[cur]();
+}
+
+/* ================= VIEWS ================= */
+function vDash(){
+  const t=T();
+  const dIntake=daysTo(S.settings.intakeDate);
+  const hwDeadline=new Date(new Date(S.settings.intakeDate+"T00:00:00")-14*86400000);
+  const hwStr=hwDeadline.toISOString().slice(0,10);
+  const dHW=daysTo(hwStr);
+  const pBerkas=pct(S.berkas,b=>b.s==="Selesai");
+  const pHW=pct(S.helloWork,x=>x.d);
+  const pModul=pct(S.modules,x=>x.s==="Lulus");
+  const nextMs=S.milestones.filter(x=>!x.d).slice().sort((a,b)=>(a.due||'9999')<(b.due||'9999')?-1:1).slice(0,4);
+  const p=S.milestones.find(x=>!x.d&&x.t.indexOf("選考料")>-1);const dp=p?daysTo(p.due):null;
+  const payLbl=dp===null?"":dp<0?`${t.late} ${-dp} ${t.days}`:dp===0?t.todayIs:`${t.left} ${dp} ${t.days}`.trim();
+  return `
+  <div class="grid c3">
+    <div class="card"><div class="sub">${esc(S.settings.targetLabel)} ${t.cdIntake}</div>
+      <div class="big">${dIntake!==null?dIntake+" "+t.days:"—"}</div>
+      <div class="sub">${t.intakeLbl} <input type="date" value="${S.settings.intakeDate}" onchange="S.settings.intakeDate=this.value;save()"></div></div>
+    <div class="card"><div class="sub">${t.cdHW}</div>
+      <div class="big" style="color:${dHW!==null&&dHW<30?'var(--bad)':'var(--warn)'}">${dHW!==null?dHW+" "+t.days:"—"}</div>
+      <div class="sub">${hwStr} — ${t.hwNote}</div></div>
+    <div class="card"><div class="sub">${t.subsidy}</div>
+      <div class="big" style="color:var(--acc2)">¥1.28M</div>
+      <div class="sub">${t.subsidyNote}</div></div>
+  </div>
+  ${p&&dp!==null&&dp<=3?`<div class="alert red">${t.payAlert(payLbl)}</div>`:""}
+  ${dHW!==null&&dHW<45?`<div class="alert red">${t.hwAlert(dHW)}</div>`:""}
+  ${(()=>{const b=daysSinceBackup();return b!==null&&b>=7?`<div class="alert">${t.bkAlert(b)}</div>`:"";})()}
+  <div class="grid c3">
+    <div class="card"><h2>${t.pBerkas}</h2><div class="bar"><div style="width:${pBerkas}%"></div></div><div class="sub" style="margin-top:6px">${pBerkas}${t.pctDone}</div></div>
+    <div class="card"><h2>${t.pHW}</h2><div class="bar"><div style="width:${pHW}%"></div></div><div class="sub" style="margin-top:6px">${pHW}${t.pctDone}</div></div>
+    <div class="card"><h2>${t.pModul}</h2><div class="bar"><div style="width:${pModul}%"></div></div><div class="sub" style="margin-top:6px">${pModul}${t.pctPass}</div></div>
+  </div>
+  <div class="grid c2">
+    <div class="card"><h2>${t.weekly}</h2>
+      ${S.weeklyActions.map((a,i)=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0">
+        <input type="checkbox" ${a.d?"checked":""} onchange="S.weeklyActions[${i}].d=this.checked;save()">
+        <span class="${a.d?'done':''}" style="flex:1;font-size:.85rem">${esc(a.t)}</span>
+        <span class="del" onclick="S.weeklyActions.splice(${i},1);save()">×</span></div>`).join("")}
+      <div style="display:flex;gap:6px;margin-top:8px"><input id="newAct" placeholder="...">
+      <button class="btn small" onclick="const v=document.getElementById('newAct').value.trim();if(v){S.weeklyActions.push({t:v,d:false});save()}">${t.add}</button></div></div>
+    <div class="card"><h2>${t.msNext}</h2>
+      ${nextMs.length?nextMs.map(ms=>{const d=daysTo(ms.due);return `<div style="padding:6px 0;border-bottom:1px solid var(--line);font-size:.85rem">
+        <b style="color:${d!==null&&d<7?'var(--bad)':'var(--ink)'}">${ms.due}</b> (${d} ${t.days}) — ${esc(ms.t)}</div>`;}).join(""):`<div class='sub'>${t.msDone}</div>`}
+      <div class="small-note">${t.msAll}</div></div>
+  </div>
+  <div class="card"><h2>${t.brand}</h2>
+    ${t.brandChips.map(c=>`<span class="chip">${c}</span>`).join(" ")}
+    <div class="sub" style="margin-top:8px">${t.brandText}</div></div>`;
+}
+
+function vDaftar(){
+  const t=T();
+  return `
+  <div class="alert">${t.routeAlert}</div>
+  <div class="card"><h2>${t.ckTitle}</h2>
+    <table><tr><th>${t.colDoc}</th><th style="width:110px">${t.colStatus}</th><th>${t.colNote}</th></tr>
+    ${S.berkas.map((b,i)=>`<tr><td class="${b.s==='Selesai'?'done':''}">${esc(b.t)}</td>
+      <td><select onchange="S.berkas[${i}].s=this.value;save()">
+        ${["Belum","Draf","Selesai"].map(o=>`<option value="${o}" ${b.s===o?"selected":""}>${t.st[o]}</option>`).join("")}</select></td>
+      <td><input value="${esc(b.n)}" onchange="S.berkas[${i}].n=this.value;save()"></td></tr>`).join("")}</table></div>
+  <div class="card"><h2>${t.msTitle}</h2>
+    <table><tr><th style="width:34px">✔</th><th>${t.colMs}</th><th style="width:150px">${t.colTarget}</th><th></th></tr>
+    ${S.milestones.map((ms,i)=>`<tr><td><input type="checkbox" ${ms.d?"checked":""} onchange="S.milestones[${i}].d=this.checked;save()"></td>
+      <td class="${ms.d?'done':''}">${esc(ms.t)}</td>
+      <td><input type="date" value="${ms.due}" onchange="S.milestones[${i}].due=this.value;save()"></td>
+      <td><span class="del" onclick="S.milestones.splice(${i},1);save()">×</span></td></tr>`).join("")}</table>
+    <div style="display:flex;gap:6px;margin-top:8px"><input id="msT" placeholder="${t.msPh}"><input type="date" id="msD">
+    <button class="btn small" onclick="const x=document.getElementById('msT').value.trim(),d=document.getElementById('msD').value;if(x){S.milestones.push({t:x,due:d,d:false});S.milestones.sort((a,b)=>(a.due||'9999')<(b.due||'9999')?-1:1);save()}">${t.add}</button></div></div>
+  <div class="card"><h2>${t.orgTitle}</h2>
+    <table>${S.contacts.map((c,i)=>`<tr><th style="width:150px">${esc(c.k)}</th>
+      <td><input value="${esc(c.v)}" onchange="S.contacts[${i}].v=this.value;save()"></td></tr>`).join("")}</table>
+    <div class="small-note">${t.orgNote}</div></div>
+  <div class="card"><h2>${t.schedTitle}</h2><div class="sub">${t.schedBody}</div></div>`;
+}
+
+function vDana(){
+  const t=T();
+  const totPlan=S.payments.reduce((a,p)=>a+Number(p.amt||0),0);
+  const totPaid=S.payments.filter(p=>p.paid).reduce((a,p)=>a+Number(p.amt||0),0);
+  const totKyufu=S.kyufu.filter(k=>k.done).reduce((a,k)=>a+Number(k.amt||0),0);
+  return `
+  <div class="grid c3">
+    <div class="card"><div class="sub">${t.totPlan}</div><div class="big">${yen(totPlan)}</div></div>
+    <div class="card"><div class="sub">${t.totPaid}</div><div class="big" style="color:var(--warn)">${yen(totPaid)}</div></div>
+    <div class="card"><div class="sub">${t.totKyufu}</div><div class="big" style="color:var(--acc2)">${yen(totKyufu)}</div><div class="sub">${t.kyufuMax}</div></div>
+  </div>
+  <div class="alert">${t.reimAlert}</div>
+  <div class="card"><h2>${t.payTitle}</h2>
+    <table><tr><th style="width:34px">✔</th><th style="width:140px">${t.colDate}</th><th>${t.colItem}</th><th style="width:130px">${t.colAmt}</th><th></th></tr>
+    ${S.payments.map((p,i)=>`<tr><td><input type="checkbox" ${p.paid?"checked":""} onchange="S.payments[${i}].paid=this.checked;save()"></td>
+      <td><input type="date" value="${p.dt}" onchange="S.payments[${i}].dt=this.value;save()"></td>
+      <td class="${p.paid?'done':''}">${esc(p.item)}</td>
+      <td><input type="number" value="${p.amt}" onchange="S.payments[${i}].amt=Number(this.value);save()"></td>
+      <td><span class="del" onclick="S.payments.splice(${i},1);save()">×</span></td></tr>`).join("")}</table>
+    <div style="display:flex;gap:6px;margin-top:8px"><input id="payT" placeholder="${t.payPh}"><input type="number" id="payA" placeholder="¥" style="width:120px">
+    <button class="btn small" onclick="const x=document.getElementById('payT').value.trim();if(x){S.payments.push({dt:'',item:x,amt:Number(document.getElementById('payA').value||0),paid:false});save()}">${t.add}</button></div></div>
+  <div class="card"><h2>${t.hwTitle}</h2>
+    ${S.helloWork.map((h,i)=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0">
+      <input type="checkbox" ${h.d?"checked":""} onchange="S.helloWork[${i}].d=this.checked;save()">
+      <span class="${h.d?'done':''}" style="font-size:.85rem">${esc(h.t)}</span></div>`).join("")}
+    <div class="small-note">${t.hwFoot}</div></div>
+  <div class="card"><h2>${t.kyufuTitle}</h2>
+    <table><tr><th style="width:34px">✔</th><th>${t.colPeriod}</th><th style="width:140px">${t.colClaim}</th><th style="width:130px">${t.colPaid}</th></tr>
+    ${S.kyufu.map((k,i)=>`<tr><td><input type="checkbox" ${k.done?"checked":""} onchange="S.kyufu[${i}].done=this.checked;save()"></td>
+      <td class="${k.done?'done':''}">${esc(k.p)}</td>
+      <td><input type="date" value="${k.dt}" onchange="S.kyufu[${i}].dt=this.value;save()"></td>
+      <td><input type="number" value="${k.amt}" onchange="S.kyufu[${i}].amt=Number(this.value);save()"></td></tr>`).join("")}</table></div>`;
+}
+
+function vKuliah(){
+  const t=T();
+  const totJam=S.studyLog.reduce((a,l)=>a+Number(l.h||0),0);
+  return `
+  <div class="alert">${t.learnAlert}</div>
+  <div class="card"><h2>${t.modTitle}</h2>
+    <table><tr><th>${t.colMod}</th><th style="width:90px">${t.colType}</th><th style="width:130px">${t.colStatus}</th><th>${t.colNote}</th></tr>
+    ${S.modules.map((md,i)=>`<tr><td>${esc(md.t)}</td><td><span class="chip">${t.mt[md.type]||md.type}</span></td>
+      <td><select onchange="S.modules[${i}].s=this.value;save()">
+        ${["Belum","Berjalan","Tugas","Lulus"].map(o=>`<option value="${o}" ${md.s===o?"selected":""}>${t.ms2[o]}</option>`).join("")}</select></td>
+      <td><input value="${esc(md.note)}" onchange="S.modules[${i}].note=this.value;save()"></td></tr>`).join("")}</table>
+    <div class="small-note">${t.modNote}</div></div>
+  <div class="card"><h2>${t.logTitle} <b>${totJam.toFixed(1)} ${t.hours}</b></h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <input type="date" id="slD"><input type="number" id="slH" placeholder="${t.colHours}" style="width:90px" step="0.5">
+      <input id="slT" placeholder="${t.logPh}" style="flex:1;min-width:200px">
+      <button class="btn small" onclick="const d=document.getElementById('slD').value,h=document.getElementById('slH').value,x=document.getElementById('slT').value.trim();if(d&&h){S.studyLog.unshift({d:d,h:Number(h),t:x});save()}">${t.logBtn}</button></div>
+    <table><tr><th style="width:130px">${t.colDate}</th><th style="width:70px">${t.colHours}</th><th>${t.colWhat}</th><th></th></tr>
+    ${S.studyLog.slice(0,30).map((l,i)=>`<tr><td>${l.d}</td><td>${l.h}</td><td>${esc(l.t)}</td>
+      <td><span class="del" onclick="S.studyLog.splice(${i},1);save()">×</span></td></tr>`).join("")}</table>
+    ${S.studyLog.length>30?`<div class="small-note">${t.logMore(30,S.studyLog.length)}</div>`:""}</div>
+  <div class="card"><h2>${t.blockTitle}</h2>
+    ${t.blocks.map(b=>`<span class="chip">${b}</span>`).join(" ")}
+    <div class="sub" style="margin-top:6px">${t.blockNote}</div></div>`;
+}
+
+function vTesis(){
+  const t=T();
+  return `
+  <div class="alert">${t.thAlert}</div>
+  <div class="card"><h2>${t.thTitle}</h2>
+    <table><tr><th>${t.colTopic}</th><th style="width:110px">${t.colScore}</th><th>${t.colNote}</th><th></th></tr>
+    ${S.thesisIdeas.map((th,i)=>`<tr><td><input value="${esc(th.t)}" onchange="S.thesisIdeas[${i}].t=this.value;save()"></td>
+      <td><input value="${esc(th.score)}" onchange="S.thesisIdeas[${i}].score=this.value;save()"></td>
+      <td><input value="${esc(th.note)}" onchange="S.thesisIdeas[${i}].note=this.value;save()"></td>
+      <td><span class="del" onclick="S.thesisIdeas.splice(${i},1);save()">×</span></td></tr>`).join("")}</table>
+    <div style="display:flex;gap:6px;margin-top:8px"><input id="thT" placeholder="${t.thPh}">
+    <button class="btn small" onclick="const v=document.getElementById('thT').value.trim();if(v){S.thesisIdeas.push({t:v,score:'',note:''});save()}">${t.add}</button></div></div>
+  <div class="card"><h2>${t.thCrit}</h2>
+    ${t.crits.map(c=>`<span class="chip">${c}</span>`).join(" ")}
+    <div class="sub" style="margin-top:8px">${t.critNote}</div></div>`;
+}
+
+function vDraf(){
+  const t=T();
+  const LIST=activeDrafts();
+  if(!LIST.length) return `
+    <div class="card"><h2>${t.drafTitle}</h2>
+      <div class="alert">${t.drafEmpty}</div>
+      <div class="sub">${t.drafWhereBody}</div></div>`;
+  if(curDraf>=LIST.length) curDraf=0;
+  const d=LIST[curDraf];
+  const total=d.sections.reduce((a,s)=>a+jchars(s.text),0);
+  const overAll=(d.limit&&total>d.limit)||(d.minLimit&&total<d.minLimit);
+  return `
+  <div class="card"><h2>${t.drafTitle}</h2>
+    <div class="sub">${t.drafIntro}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+      ${LIST.map((x,i)=>`<button class="btn ${i===curDraf?'':'gray'} small" onclick="curDraf=${i};render()">${esc(x.name)}</button>`).join("")}
+    </div>
+  </div>
+
+  <div class="card"><h2>${t.drafWhere}</h2><div class="sub">${t.drafWhereBody}</div></div>
+
+  <div class="card">
+    <h2>${esc(d.name)}</h2>
+    <table>
+      <tr><th style="width:110px">${t.drafStatus}</th><td>${d.status[LANG]}</td></tr>
+      <tr><th>${t.drafSrc}</th><td><code style="font-size:.78rem">${esc(d.src)}</code></td></tr>
+      <tr><th>${t.drafNote}</th><td>${d.note[LANG]}</td></tr>
+      <tr><th>${t.drafChars}</th><td><b style="color:${overAll?'var(--bad)':'var(--acc2)'}">${total.toLocaleString()}</b> ${t.drafChars}
+        ${d.limit?` / ${t.drafLimit} ${d.minLimit?d.minLimit.toLocaleString()+"〜":""}${d.limit.toLocaleString()} — ${overAll?t.drafOver:t.drafOk}`:""}</td></tr>
+    </table>
+    <div style="margin-top:12px">
+      <button class="btn green" id="cpAll" onclick="copySection(${curDraf},-1,'cpAll')">${t.drafCopyAll}</button>
+    </div>
+  </div>
+
+  ${d.sections.map((s,i)=>{
+    const n=jchars(s.text);
+    const bad=(s.lim&&n>s.lim)||(s.min&&n<s.min);
+    const lbl=s.lim?` / ${t.drafLimit} ${s.min?s.min+"〜":""}${s.lim} ${bad?t.drafOver:t.drafOk}`:"";
+    return `<div class="card">
+      <div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+        <h2 style="flex:1;min-width:200px;margin-bottom:4px">${esc(s.h)}</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="chip" ${bad?'style="color:var(--bad);font-weight:700"':''}>${n.toLocaleString()} ${t.drafChars}${lbl}</span>
+          <button class="btn small" id="cp${i}" onclick="copySection(${curDraf},${i},'cp${i}')">${t.drafCopy}</button>
+        </div>
+      </div>
+      <div id="txt${i}" style="white-space:pre-wrap;font-size:.88rem;line-height:1.85;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">${esc(s.text)}</div>
+    </div>`;
+  }).join("")}`;
+}
+
+function vMe(){
+  const t=T();
+  return `
+  <div class="card"><h2>${t.meTitle}</h2>
+    <table>${S.myFields.map((f,i)=>`<tr><th style="width:160px">${esc(f.k)}</th>
+      <td><input value="${esc(f.v)}" onchange="S.myFields[${i}].v=this.value;save()"></td></tr>`).join("")}</table>
+    <div style="display:flex;gap:6px;margin-top:8px"><input id="mfK" placeholder="${t.meKeyPh}" style="width:160px"><input id="mfV" placeholder="${t.meValPh}">
+    <button class="btn small" onclick="const k=document.getElementById('mfK').value.trim();if(k){S.myFields.push({k:k,v:document.getElementById('mfV').value});save()}">${t.add}</button></div></div>
+  <div class="card"><h2>${t.meBrand}</h2>
+    ${t.brandChips.map(c=>`<span class="chip">${c}</span>`).join("<br>")}
+    <div class="sub" style="margin-top:10px"><b></b>${t.brandText}</div>
+    <div class="sub" style="margin-top:6px">${t.meBrandJP}</div>
+    <div class="small-note">${t.meBrandNote}</div></div>
+  <div class="card"><h2>${t.sgTitle}</h2>
+    ${S.mySuggestions.map((sg,i)=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line)">
+      <input type="checkbox" ${sg.d?"checked":""} onchange="S.mySuggestions[${i}].d=this.checked;save()">
+      <span class="${sg.d?'done':''}" style="flex:1;font-size:.85rem">${esc(sg.t)}</span>
+      <span class="del" onclick="S.mySuggestions.splice(${i},1);save()">×</span></div>`).join("")}
+    <div style="display:flex;gap:6px;margin-top:8px"><input id="newSg" placeholder="${t.sgPh}">
+    <button class="btn small" onclick="const v=document.getElementById('newSg').value.trim();if(v){S.mySuggestions.push({t:v,d:false});save()}">${t.add}</button></div>
+    <div class="small-note">${t.sgNote}</div></div>`;
+}
+
+render();
+</script>
+</body>
+</html>
+
