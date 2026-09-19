@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -53,6 +53,45 @@ button.btn.green{background:var(--acc2)} button.btn.gray{background:#8a93a6} but
 .small-note{font-size:.72rem;color:var(--sub);margin-top:6px}
 footer{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding:8px 16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 a{color:var(--accT)}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-wrap table{min-width:620px}
+@media(max-width:600px){#bkNote{display:none} main{padding:10px} .card{padding:12px} body{padding-bottom:70px}}
+.semtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.semtabs button{background:var(--chip);color:var(--accT);border:1px solid var(--line);border-radius:20px;padding:4px 12px;font-size:.78rem;cursor:pointer}
+.semtabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.att-hadir{color:var(--acc2);font-weight:600}.att-absen,.att-rekaman{color:var(--bad);font-weight:600}
+.wk{display:flex;align-items:flex-end;gap:6px;height:120px;border-bottom:1px solid var(--line);position:relative;margin-top:8px}
+.wk .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.wk .col>div{width:70%;background:var(--acc);border-radius:4px 4px 0 0;min-height:2px}
+.wk .col.now>div{background:var(--acc2)}
+.wk .tgt{position:absolute;left:0;right:0;border-top:2px dashed var(--warn)}
+.wk-lbl{display:flex;gap:6px}.wk-lbl span{flex:1;text-align:center;font-size:.68rem;color:var(--sub)}
+.up-row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.85rem;align-items:baseline}
+.up-row b{white-space:nowrap}
+details summary{cursor:pointer;font-size:.85rem;color:var(--accT);margin-top:10px}
+textarea{min-height:60px;resize:vertical;line-height:1.6}
+.notes-wrap{display:grid;gap:14px}
+@media(min-width:760px){.notes-wrap{grid-template-columns:260px 1fr}.notes-side{position:sticky;top:10px;align-self:start;max-height:calc(100vh - 110px);overflow:auto}}
+.notes-wrap .card{margin-bottom:0}
+.nitem{padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.nitem:hover{background:var(--chip)}.nitem.on{background:var(--chip);border-color:var(--line)}
+.ntitle{font-size:1.4rem;font-weight:700;border:none;background:none;padding:4px 0;border-radius:0}
+.ntitle:focus{outline:none;border-bottom:2px solid var(--line)}
+.ntool{display:flex;gap:4px;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:8px}
+.ntool button{background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-size:.8rem;cursor:pointer;min-width:34px}
+.ned{min-height:55vh;outline:none;line-height:1.8;font-size:.95rem;padding:4px 2px}
+.ned h1{font-size:1.5rem;margin:.7em 0 .2em}.ned h2{font-size:1.2rem;margin:.8em 0 .2em;color:var(--accT)}.ned h3{font-size:1.05rem;margin:.6em 0 .2em}
+.ned p{margin:.15em 0}.ned ul,.ned ol{padding-left:1.5em;margin:.2em 0}
+.ned blockquote{border-left:3px solid var(--line);padding-left:12px;color:var(--sub);margin:.4em 0}
+.ned hr{border:none;border-top:1px solid var(--line);margin:1em 0}
+.ned code{background:var(--chip);padding:1px 5px;border-radius:4px;font-family:Consolas,monospace;font-size:.85em}
+.ned ul.todo{list-style:none;padding-left:.2em}
+.ned ul.todo>li{position:relative;padding-left:1.8em}
+.ned ul.todo>li::before{content:"";position:absolute;left:0;top:.42em;width:1em;height:1em;border:2px solid var(--sub);border-radius:4px;cursor:pointer;box-sizing:border-box}
+.ned ul.todo>li[data-done="1"]::before{background:var(--acc2);border-color:var(--acc2)}
+.ned ul.todo>li[data-done="1"]::after{content:"✓";position:absolute;left:.18em;top:.05em;color:#fff;font-size:.8em;font-weight:700;pointer-events:none}
+.ned ul.todo>li[data-done="1"]{color:var(--sub);text-decoration:line-through}
+.ned:empty::before{content:"…";color:var(--sub)}
 </style>
 </head>
 <body>
@@ -72,6 +111,9 @@ a{color:var(--accT)}
 </footer>
 
 <script>
+/* Penyimpanan aman: kalau localStorage diblokir (mode privat, pratinjau), pakai memori sementara agar halaman tetap tampil */
+const LS=(()=>{ try{ const k="__mba_t"; window.localStorage.setItem(k,"1"); window.localStorage.removeItem(k); return window.localStorage; }
+  catch(e){ const m={}; return {getItem:k=>(k in m?m[k]:null),setItem:(k,v)=>{m[k]=String(v);},removeItem:k=>{delete m[k];},clear:()=>{for(const k in m)delete m[k];}}; } })();
 /* ================= I18N ================= */
 const I18N={
 id:{
@@ -258,7 +300,167 @@ ja:{
   sgNote:"根拠：ケースメソッド＋土曜3週連続/1週休＋平均42〜43歳の実務家コホート＋日本語論文19,500字以内＋事務局の無料準備講座3種。"
 }
 };
-let LANG=localStorage.getItem("mba_lang")||"id";
+/* ================= I18N — fase kuliah (ditambahkan 2026-09-20) ================= */
+const I18N_K={
+id:{
+  tabs:{dash:"📊 Dashboard",kuliah:"📚 Kuliah",notes:"📓 Catatan",tesis:"🎓 Tesis",dana:"💰 Dana & 給付金",draf:"📝 Draf",daftar:"📁 Arsip Pendaftaran",me:"👤 My Page"},
+  learnAlert:"Format: Zoom live, Sabtu ±3×/bulan (3 minggu on, 1 off) + tugas mandiri. Beban ±2.200 jam / 2 thn ≈ <b>20 jam/minggu</b>. <b>Hadir ≥80% per semester</b> = syarat kelulusan <b>dan</b> syarat 給付金.",
+  subsidyNote:"maks. ¥1.280.000 — reimbursement, klaim tiap 6 bulan. Simpan semua 領収書 & 受講証明書.",
+  archNote:"✅ Tahap pendaftaran sudah selesai (LULUS 17/8). Tab ini disimpan sebagai arsip.",
+  cdNext:"Kelas berikutnya",cdStart:"Menuju 授業開始",noSess:"Belum ada jadwal — isi di tab Kuliah",
+  attCard:"Kehadiran semester ini",attSub:(h,r,l)=>`hadir ${h} dari ${r} kelas tercatat · sisa jatah absen: ${l}`,attNone:"Belum ada kelas yang tercatat",
+  hrsCard:"Jam belajar minggu ini",hrsSub:t=>`target ${t} jam/minggu`,
+  pMod:"Modul lulus",pAsg:"Tugas terkirim",pThesis:"Rencana tesis",
+  alSched:"📅 <b>Jadwal kelas belum lengkap.</b> Begitu 年間スケジュール dari 事務局 datang, masukkan semua tanggal di tab <b>Kuliah → Tambah banyak tanggal</b> (atau minta Claude). Jatah absen 20% baru akurat setelah semua tanggal masuk.",
+  alUnrec:n=>`📝 ${n} kelas yang sudah lewat belum dicatat kehadirannya — isi di tab <b>Kuliah</b>.`,
+  alAtt:p=>`🚨 <b>Kehadiran ${p}%</b> — di bawah syarat 80%. Ini syarat kelulusan <b>dan</b> syarat 給付金. Tanyakan ke 事務局 soal kelas pengganti.`,
+  alLeft:l=>`⚠️ Sisa jatah absen semester ini tinggal <b>${l}</b> kelas.`,
+  alOver:n=>`⏰ ${n} tugas sudah lewat deadline.`,
+  upTitle:"⏰ Yang akan datang (kelas · tugas · milestone)",upNone:"Tidak ada jadwal terdekat",kCls:"Kelas",kAsg:"Tugas",kMs:"Milestone",
+  semTitle:"📅 Jadwal kelas & kehadiran",
+  attRule:"Syarat: hadir ≥80% per semester. Kelas bertanda 🎥 (absen, menonton rekaman) dihitung sebagai ABSEN sampai ada konfirmasi berbeda dari 事務局.",
+  attStat:(h,r,tot,al,l)=>`Tercatat ${r} dari ${tot} kelas · hadir ${h} · jatah absen ${al} (sisa ${l})`,
+  colDay:"Hari",colSess:"Sesi / materi",colAtt:"Kehadiran",colSem:"Sem.",
+  att:{"":"— belum dicatat",hadir:"✅ Hadir",rekaman:"🎥 Absen + rekaman",absen:"❌ Absen"},
+  nc:"tidak dihitung",sessPh:"Judul sesi (mis. 第1回 …)",addSess:"+ Sesi",noSessSem:"Belum ada kelas di semester ini.",
+  bulkTitle:"➕ Tambah banyak tanggal sekaligus (dari 年間スケジュール)",bulkPh:"Satu tanggal per baris, boleh diikuti judul:\n2026-10-17 第2回\n2026-10-24 第3回",bulkBtn:"Tambahkan ke semester ini",bulkDone:n=>`${n} tanggal ditambahkan ✔`,
+  modTitle2:"📚 Modul (180 kredit: 6 × 20 + tesis 60)",colGrade:"Nilai",modNote2:"Nama modul bisa diubah — mis. setelah memilih アカウンティング atau リーダーシップ論.",
+  asgTitle:"📝 Tugas & laporan",asgPh:"Judul tugas...",colDue:"Deadline",colModS:"Modul",
+  ast:{Belum:"Belum mulai",Dikerjakan:"Dikerjakan",Terkirim:"Terkirim",Dinilai:"Sudah dinilai"},asgNone:"Belum ada tugas. Tambahkan begitu instruksi tugas keluar.",
+  hrsTitle:"⏱ Jam belajar",tgtLbl:"Target per minggu (jam):",wk8:"8 minggu terakhir (garis putus = target)",wkNow:"minggu ini",
+  tgtNote:"Beban resmi ±20 jam/minggu. Kalau belum realistis, turunkan dulu — yang penting konsisten.",
+  thMain:"🎯 Tema utama (dinyatakan di wawancara 9/8)",thTheme:"Tema",thRQ:"Pertanyaan penelitian",thPermL:"Izin data perusahaan",
+  perm:{Belum:"🔴 Belum dibicarakan",Diskusi:"🟡 Sedang dibicarakan",Lisan:"🟢 Disetujui lisan",Tertulis:"✅ Izin tertulis"},
+  thSupL:"Calon pembimbing",thNoteL:"Catatan",thPlan:"🗓 Rencana tesis",thPlanPh:"Langkah baru...",
+  nNew:"＋ Halaman baru",nSearch:"Cari catatan...",nEmpty:"Belum ada catatan. Klik ＋ Halaman baru.",nUntitled:"Tanpa judul",
+  nTpl:"Template",nTag:"Modul",nNoTag:"Umum",nAll:"Semua",nPin:"📌 Sematkan",nUnpin:"📌 Lepas",nDel:"🗑 Hapus",nDelQ:"Hapus halaman ini?",nUpd:"Diubah",
+  nPick:"Pilih halaman di kiri, atau buat yang baru.",nFromSess:"📓 Catatan kelas",nTitlePh:"Judul",
+  nHint:"Pintasan: ketik <code>#</code> spasi = judul besar · <code>##</code> = subjudul · <code>-</code> = poin · <code>1.</code> = nomor · <code>[]</code> = checklist · <code>&gt;</code> = kutipan · Ctrl+B tebal. Klik kotak checklist untuk mencentang. Tersimpan otomatis.",
+  tpl:{blank:"📄 Kosong",class:"📓 Catatan kelas",case:"📑 Bedah kasus",read:"📚 Ringkasan bacaan",idea:"💡 Ide tesis"},
+  tplBody:{
+   blank:"<p><br></p>",
+   class:"<h2>Poin utama</h2><ul><li><br></li></ul><h2>Framework / konsep</h2><ul><li><br></li></ul><h2>Pertanyaan saya</h2><ul><li><br></li></ul><h2>Kaitan ke kantor</h2><p><br></p><h2>Kaitan ke tesis</h2><p><br></p><h2>To-do</h2><ul class=\"todo\"><li data-done=\"0\"><br></li></ul>",
+   case:"<h2>Situasi</h2><p><br></p><h2>Masalah inti</h2><p><br></p><h2>Data kunci</h2><ul><li><br></li></ul><h2>Opsi</h2><ol><li><br></li></ol><h2>Rekomendasi saya + alasannya</h2><p><br></p><h2>1 pertanyaan untuk kelas</h2><p><br></p>",
+   read:"<h2>Sumber</h2><p><br></p><h2>Argumen utama</h2><ul><li><br></li></ul><h2>Yang saya setujui / ragukan</h2><p><br></p><h2>Kutipan penting</h2><blockquote><br></blockquote><h2>Bisa dipakai untuk</h2><p><br></p>",
+   idea:"<h2>Ide</h2><p><br></p><h2>Kenapa menarik</h2><p><br></p><h2>Data yang dibutuhkan</h2><ul class=\"todo\"><li data-done=\"0\"><br></li></ul><h2>Teori terkait</h2><p><br></p>"
+  },
+  calTitle:"📆 Google Calendar",calAcc:"Akun Google:",calTime:"Jam kelas Sabtu:",calTimeNote:"Kosongkan kalau belum tahu — kelas akan dibuat sebagai acara seharian.",
+  calA:"① Sekali klik per acara",calANote:"Tombol 📅 di setiap kelas & tugas membuka Google Calendar akun di atas dengan acara yang sudah terisi — tinggal Simpan.",
+  calB:"② Semua sekaligus (file .ics)",calBBtn:"⬇️ Unduh semua jadwal (.ics)",calBNote:"Buka calendar.google.com (akun di atas) → ⚙️ Setelan → Impor & ekspor → pilih file ini. Cocok untuk memasukkan jadwal satu semester sekaligus. Kalau jadwal berubah, lebih baik pakai cara ③.",
+  calC:"③ Sinkron otomatis (paling rapi)",calCNote:"Aplikasi membuat kalender khusus <b>“MBA UWTSD”</b> di akun Google Anda dan memperbarui isinya setiap kali tombol Sinkronkan ditekan (acara yang dihapus di sini ikut terhapus di sana). Hanya bisa mengakses kalender yang dibuatnya sendiri. Butuh <b>Client ID</b> sekali saja — lihat panduan.",
+  calClient:"Client ID:",calSync:"🔄 Sinkronkan ke Google Calendar",calSyncing:"Menyinkronkan…",calDone:(a,u,d)=>`Selesai ✔ — ${a} ditambah, ${u} diperbarui, ${d} dihapus`,
+  calErr:"Gagal sinkron:",calNeedId:"Isi Client ID dulu (lihat panduan).",calOrigin:"Sinkron otomatis hanya jalan di versi online (GitHub Pages). Di file lokal pakai cara ① atau ②.",
+  calGuide:"📘 Panduan membuat Client ID (±10 menit, sekali saja)",
+  calGuideBody:"Login ke <b>console.cloud.google.com</b> dengan akun di atas, lalu:<ol style='margin:6px 0 0 18px;line-height:1.8'><li>Buat project baru, mis. <i>MBA UWTSD</i>.</li><li><b>APIs &amp; Services → Library</b> → cari <i>Google Calendar API</i> → <b>Enable</b>.</li><li><b>OAuth consent screen</b> → User type <b>External</b> → isi nama aplikasi &amp; email → di bagian <b>Test users</b> tambahkan email akun Anda sendiri.</li><li><b>Credentials → Create credentials → OAuth client ID</b> → tipe <b>Web application</b> → di <b>Authorized JavaScript origins</b> isi <code>{ORIGIN}</code> → Create.</li><li>Salin <b>Client ID</b> (berakhiran <code>.apps.googleusercontent.com</code>) → tempel di kolom di atas → tekan Sinkronkan → izinkan di jendela Google.</li></ol><div class='small-note'>Client ID bukan kata sandi — aman disimpan di sini. Jangan pernah menempelkan <i>Client secret</i> atau kata sandi Google ke aplikasi ini.</div>",
+  calLinkT:"Tambah ke Google Calendar"
+},
+en:{
+  tabs:{dash:"📊 Dashboard",kuliah:"📚 Coursework",notes:"📓 Notes",tesis:"🎓 Dissertation",dana:"💰 Funding",draf:"📝 Drafts",daftar:"📁 Application archive",me:"👤 My Page"},
+  learnAlert:"Format: live Zoom, Saturdays ±3×/month (3 weeks on, 1 off) + self-study. ±2,200 hours over 2 years ≈ <b>20 h/week</b>. <b>≥80% attendance per semester</b> is required to graduate <b>and</b> to receive the 給付金.",
+  subsidyNote:"up to ¥1,280,000 — reimbursed, claimed every 6 months. Keep every receipt and attendance certificate.",
+  archNote:"✅ The application stage is complete (accepted 17 Aug). This tab is kept as an archive.",
+  cdNext:"Next class",cdStart:"Until classes begin",noSess:"No classes scheduled — add them in Coursework",
+  attCard:"Attendance this semester",attSub:(h,r,l)=>`attended ${h} of ${r} recorded · absences left: ${l}`,attNone:"No classes recorded yet",
+  hrsCard:"Study hours this week",hrsSub:t=>`target ${t} h/week`,
+  pMod:"Modules passed",pAsg:"Assignments submitted",pThesis:"Dissertation plan",
+  alSched:"📅 <b>The class schedule is incomplete.</b> As soon as the annual schedule (年間スケジュール) arrives, enter every date in <b>Coursework → Add many dates</b> (or ask Claude). The 20% absence allowance is only accurate once all dates are in.",
+  alUnrec:n=>`📝 ${n} past class(es) have no attendance recorded — fill them in under <b>Coursework</b>.`,
+  alAtt:p=>`🚨 <b>Attendance ${p}%</b> — below the 80% requirement, which applies to graduation <b>and</b> the 給付金. Ask the office about make-up options.`,
+  alLeft:l=>`⚠️ Only <b>${l}</b> absence(s) left this semester.`,
+  alOver:n=>`⏰ ${n} assignment(s) past the deadline.`,
+  upTitle:"⏰ Coming up (classes · assignments · milestones)",upNone:"Nothing coming up",kCls:"Class",kAsg:"Assignment",kMs:"Milestone",
+  semTitle:"📅 Class schedule & attendance",
+  attRule:"Requirement: ≥80% attendance per semester. Classes marked 🎥 (absent, watched the recording) count as ABSENT unless the office confirms otherwise.",
+  attStat:(h,r,tot,al,l)=>`Recorded ${r} of ${tot} classes · attended ${h} · absence allowance ${al} (${l} left)`,
+  colDay:"Day",colSess:"Session / topic",colAtt:"Attendance",colSem:"Sem.",
+  att:{"":"— not recorded",hadir:"✅ Attended",rekaman:"🎥 Absent + recording",absen:"❌ Absent"},
+  nc:"not counted",sessPh:"Session title (e.g. Session 1 …)",addSess:"+ Session",noSessSem:"No classes in this semester yet.",
+  bulkTitle:"➕ Add many dates at once (from the annual schedule)",bulkPh:"One date per line, optionally followed by a title:\n2026-10-17 Session 2\n2026-10-24 Session 3",bulkBtn:"Add to this semester",bulkDone:n=>`${n} date(s) added ✔`,
+  modTitle2:"📚 Modules (180 credits: 6 × 20 + dissertation 60)",colGrade:"Grade",modNote2:"Module names are editable — e.g. once you choose Accounting or Leadership.",
+  asgTitle:"📝 Assignments & reports",asgPh:"Assignment title...",colDue:"Due",colModS:"Module",
+  ast:{Belum:"Not started",Dikerjakan:"In progress",Terkirim:"Submitted",Dinilai:"Graded"},asgNone:"No assignments yet. Add them as soon as instructions come out.",
+  hrsTitle:"⏱ Study hours",tgtLbl:"Weekly target (hours):",wk8:"Last 8 weeks (dashed line = target)",wkNow:"this week",
+  tgtNote:"The official load is ±20 h/week. If that isn't realistic yet, lower it — consistency matters most.",
+  thMain:"🎯 Main theme (stated at the 9 Aug interview)",thTheme:"Theme",thRQ:"Research questions",thPermL:"Company data permission",
+  perm:{Belum:"🔴 Not discussed yet",Diskusi:"🟡 Under discussion",Lisan:"🟢 Verbally approved",Tertulis:"✅ Written permission"},
+  thSupL:"Prospective supervisor",thNoteL:"Notes",thPlan:"🗓 Dissertation plan",thPlanPh:"New step...",
+  nNew:"＋ New page",nSearch:"Search notes...",nEmpty:"No notes yet. Click ＋ New page.",nUntitled:"Untitled",
+  nTpl:"Template",nTag:"Module",nNoTag:"General",nAll:"All",nPin:"📌 Pin",nUnpin:"📌 Unpin",nDel:"🗑 Delete",nDelQ:"Delete this page?",nUpd:"Edited",
+  nPick:"Pick a page on the left, or create a new one.",nFromSess:"📓 Class notes",nTitlePh:"Title",
+  nHint:"Shortcuts: type <code>#</code> space = heading · <code>##</code> = subheading · <code>-</code> = bullet · <code>1.</code> = numbered · <code>[]</code> = checklist · <code>&gt;</code> = quote · Ctrl+B bold. Click a checkbox to tick it. Saves automatically.",
+  tpl:{blank:"📄 Blank",class:"📓 Class notes",case:"📑 Case analysis",read:"📚 Reading summary",idea:"💡 Dissertation idea"},
+  tplBody:{
+   blank:"<p><br></p>",
+   class:"<h2>Key points</h2><ul><li><br></li></ul><h2>Frameworks / concepts</h2><ul><li><br></li></ul><h2>My questions</h2><ul><li><br></li></ul><h2>Link to work</h2><p><br></p><h2>Link to dissertation</h2><p><br></p><h2>To-do</h2><ul class=\"todo\"><li data-done=\"0\"><br></li></ul>",
+   case:"<h2>Situation</h2><p><br></p><h2>Core problem</h2><p><br></p><h2>Key data</h2><ul><li><br></li></ul><h2>Options</h2><ol><li><br></li></ol><h2>My recommendation + why</h2><p><br></p><h2>One question for class</h2><p><br></p>",
+   read:"<h2>Source</h2><p><br></p><h2>Main argument</h2><ul><li><br></li></ul><h2>What I agree with / doubt</h2><p><br></p><h2>Key quote</h2><blockquote><br></blockquote><h2>Useful for</h2><p><br></p>",
+   idea:"<h2>Idea</h2><p><br></p><h2>Why it matters</h2><p><br></p><h2>Data needed</h2><ul class=\"todo\"><li data-done=\"0\"><br></li></ul><h2>Related theory</h2><p><br></p>"
+  },
+  calTitle:"📆 Google Calendar",calAcc:"Google account:",calTime:"Saturday class hours:",calTimeNote:"Leave blank if unknown — classes become all-day events.",
+  calA:"① One click per event",calANote:"The 📅 button on each class and assignment opens Google Calendar (account above) with the event pre-filled — just press Save.",
+  calB:"② Everything at once (.ics file)",calBBtn:"⬇️ Download all events (.ics)",calBNote:"Open calendar.google.com (account above) → ⚙️ Settings → Import & export → choose this file. Good for loading a whole semester. If dates change later, option ③ is better.",
+  calC:"③ Automatic sync (cleanest)",calCNote:"The app creates a dedicated <b>“MBA UWTSD”</b> calendar in your Google account and updates it every time you press Sync (events deleted here are deleted there too). It can only touch calendars it created. Needs a one-time <b>Client ID</b> — see the guide.",
+  calClient:"Client ID:",calSync:"🔄 Sync to Google Calendar",calSyncing:"Syncing…",calDone:(a,u,d)=>`Done ✔ — ${a} added, ${u} updated, ${d} removed`,
+  calErr:"Sync failed:",calNeedId:"Enter the Client ID first (see the guide).",calOrigin:"Automatic sync only works in the online version (GitHub Pages). In the local file, use option ① or ②.",
+  calGuide:"📘 How to create the Client ID (±10 min, once)",
+  calGuideBody:"Sign in to <b>console.cloud.google.com</b> with the account above, then:<ol style='margin:6px 0 0 18px;line-height:1.8'><li>Create a new project, e.g. <i>MBA UWTSD</i>.</li><li><b>APIs &amp; Services → Library</b> → search <i>Google Calendar API</i> → <b>Enable</b>.</li><li><b>OAuth consent screen</b> → User type <b>External</b> → fill in the app name &amp; email → under <b>Test users</b> add your own account's email.</li><li><b>Credentials → Create credentials → OAuth client ID</b> → type <b>Web application</b> → under <b>Authorized JavaScript origins</b> enter <code>{ORIGIN}</code> → Create.</li><li>Copy the <b>Client ID</b> (ends in <code>.apps.googleusercontent.com</code>) → paste it above → press Sync → allow access in the Google window.</li></ol><div class='small-note'>A Client ID is not a password — it's safe to store here. Never paste a <i>Client secret</i> or your Google password into this app.</div>",
+  calLinkT:"Add to Google Calendar"
+},
+ja:{
+  tabs:{dash:"📊 ダッシュボード",kuliah:"📚 授業",notes:"📓 ノート",tesis:"🎓 修士論文",dana:"💰 費用・給付金",draf:"📝 原稿",daftar:"📁 出願（記録）",me:"👤 マイページ"},
+  learnAlert:"形式：Zoomライブ、土曜 月3回程度（3週連続＋1週休み）＋自習。2年間で約2,200時間 ≒ <b>週20時間</b>。<b>各セメスター出席率80%以上</b>は修了要件であり、<b>給付金の支給要件</b>でもあります。",
+  subsidyNote:"上限 ¥1,280,000 — 後払い（6か月ごとに申請）。領収書・受講証明書はすべて保管。",
+  archNote:"✅ 出願手続きは完了しました（8/17 合格）。このタブは記録として残しています。",
+  cdNext:"次の授業",cdStart:"授業開始まで",noSess:"授業日が未登録です — 「授業」タブで追加",
+  attCard:"今セメスターの出席",attSub:(h,r,l)=>`記録済み ${r}回中 出席 ${h}回・欠席可能 残り ${l}回`,attNone:"まだ記録がありません",
+  hrsCard:"今週の学習時間",hrsSub:t=>`目標 週${t}時間`,
+  pMod:"修了モジュール",pAsg:"提出済み課題",pThesis:"論文計画",
+  alSched:"📅 <b>授業日程が未登録です。</b>事務局から年間スケジュールが届いたら、<b>授業 → 日付をまとめて追加</b> ですべて入力してください（Claudeに依頼も可）。欠席可能回数（20%）は全日程を入れてから正確になります。",
+  alUnrec:n=>`📝 過去の授業 ${n}回分の出欠が未記録です — <b>授業</b>タブで入力してください。`,
+  alAtt:p=>`🚨 <b>出席率 ${p}%</b> — 要件の80%を下回っています。修了要件であり<b>給付金の要件</b>でもあります。補講について事務局に確認を。`,
+  alLeft:l=>`⚠️ 今セメスターの欠席可能回数は残り <b>${l}回</b> です。`,
+  alOver:n=>`⏰ 締切を過ぎた課題が ${n}件あります。`,
+  upTitle:"⏰ 今後の予定（授業・課題・マイルストーン）",upNone:"直近の予定はありません",kCls:"授業",kAsg:"課題",kMs:"予定",
+  semTitle:"📅 授業日程と出欠",
+  attRule:"要件：各セメスター出席率80%以上。🎥（欠席・録画視聴）は、事務局から別途確認があるまで「欠席」として数えます。",
+  attStat:(h,r,tot,al,l)=>`全${tot}回中 ${r}回記録・出席 ${h}回・欠席可能 ${al}回（残り ${l}回）`,
+  colDay:"曜日",colSess:"回・内容",colAtt:"出欠",colSem:"期",
+  att:{"":"— 未記録",hadir:"✅ 出席",rekaman:"🎥 欠席（録画視聴）",absen:"❌ 欠席"},
+  nc:"対象外",sessPh:"回のタイトル（例：第1回 …）",addSess:"＋ 授業",noSessSem:"このセメスターの授業はまだありません。",
+  bulkTitle:"➕ 日付をまとめて追加（年間スケジュールから）",bulkPh:"1行に1日付。後ろにタイトルも可：\n2026-10-17 第2回\n2026-10-24 第3回",bulkBtn:"このセメスターに追加",bulkDone:n=>`${n}件追加しました ✔`,
+  modTitle2:"📚 モジュール（180単位：6科目×20＋論文60）",colGrade:"評価",modNote2:"科目名は編集できます（アカウンティング／リーダーシップ論を選んだら書き換え）。",
+  asgTitle:"📝 課題・レポート",asgPh:"課題名...",colDue:"締切",colModS:"科目",
+  ast:{Belum:"未着手",Dikerjakan:"作業中",Terkirim:"提出済み",Dinilai:"評価済み"},asgNone:"課題はまだありません。指示が出たら追加してください。",
+  hrsTitle:"⏱ 学習時間",tgtLbl:"週の目標（時間）：",wk8:"直近8週間（点線＝目標）",wkNow:"今週",
+  tgtNote:"公式の目安は週約20時間。現実的でなければ、まずは下げて継続を優先。",
+  thMain:"🎯 メインテーマ（8/9 面接で表明）",thTheme:"テーマ",thRQ:"リサーチクエスチョン",thPermL:"社内データ利用の許可",
+  perm:{Belum:"🔴 未相談",Diskusi:"🟡 相談中",Lisan:"🟢 口頭で了承",Tertulis:"✅ 書面で許可"},
+  thSupL:"指導教員（候補）",thNoteL:"メモ",thPlan:"🗓 論文スケジュール",thPlanPh:"新しいステップ...",
+  nNew:"＋ 新しいページ",nSearch:"ノートを検索...",nEmpty:"ノートはまだありません。「＋ 新しいページ」から作成。",nUntitled:"無題",
+  nTpl:"テンプレート",nTag:"科目",nNoTag:"一般",nAll:"すべて",nPin:"📌 ピン留め",nUnpin:"📌 解除",nDel:"🗑 削除",nDelQ:"このページを削除しますか？",nUpd:"更新",
+  nPick:"左のページを選ぶか、新しく作成してください。",nFromSess:"📓 授業ノート",nTitlePh:"タイトル",
+  nHint:"ショートカット：<code>#</code>＋スペース＝見出し・<code>##</code>＝小見出し・<code>-</code>＝箇条書き・<code>1.</code>＝番号・<code>[]</code>＝チェックリスト・<code>&gt;</code>＝引用・Ctrl+B 太字。チェック欄はクリックで切り替え。自動保存。",
+  tpl:{blank:"📄 白紙",class:"📓 授業ノート",case:"📑 ケース分析",read:"📚 文献メモ",idea:"💡 論文アイデア"},
+  tplBody:{
+   blank:"<p><br></p>",
+   class:"<h2>要点</h2><ul><li><br></li></ul><h2>フレームワーク・概念</h2><ul><li><br></li></ul><h2>疑問点</h2><ul><li><br></li></ul><h2>職場への応用</h2><p><br></p><h2>論文との関連</h2><p><br></p><h2>やること</h2><ul class=\"todo\"><li data-done=\"0\"><br></li></ul>",
+   case:"<h2>状況</h2><p><br></p><h2>本質的な課題</h2><p><br></p><h2>重要なデータ</h2><ul><li><br></li></ul><h2>選択肢</h2><ol><li><br></li></ol><h2>私の提案と理由</h2><p><br></p><h2>授業で投げかける質問</h2><p><br></p>",
+   read:"<h2>出典</h2><p><br></p><h2>主張</h2><ul><li><br></li></ul><h2>賛成点・疑問点</h2><p><br></p><h2>重要な引用</h2><blockquote><br></blockquote><h2>活用先</h2><p><br></p>",
+   idea:"<h2>アイデア</h2><p><br></p><h2>なぜ重要か</h2><p><br></p><h2>必要なデータ</h2><ul class=\"todo\"><li data-done=\"0\"><br></li></ul><h2>関連する理論</h2><p><br></p>"
+  },
+  calTitle:"📆 Googleカレンダー",calAcc:"Googleアカウント：",calTime:"土曜の授業時間：",calTimeNote:"未定なら空欄のまま — 授業は終日の予定として登録されます。",
+  calA:"① 1件ずつワンクリック",calANote:"各授業・課題の 📅 ボタンで、上記アカウントのGoogleカレンダーが入力済みの状態で開きます。「保存」を押すだけ。",
+  calB:"② まとめて登録（.icsファイル）",calBBtn:"⬇️ 全予定をダウンロード（.ics）",calBNote:"calendar.google.com（上記アカウント）→ ⚙️ 設定 → インポート／エクスポート → このファイルを選択。1セメスター分を一度に入れるのに便利。後で日程が変わる場合は③がおすすめ。",
+  calC:"③ 自動同期（いちばん整理される）",calCNote:"Googleアカウントに専用カレンダー<b>「MBA UWTSD」</b>を作成し、「同期」を押すたびに内容を更新します（ここで削除した予定は向こうでも削除）。アプリが作成したカレンダー以外には触れません。初回のみ<b>クライアントID</b>が必要です — 手順を参照。",
+  calClient:"クライアントID：",calSync:"🔄 Googleカレンダーに同期",calSyncing:"同期中…",calDone:(a,u,d)=>`完了 ✔ — 追加 ${a}件・更新 ${u}件・削除 ${d}件`,
+  calErr:"同期に失敗しました：",calNeedId:"先にクライアントIDを入力してください（手順参照）。",calOrigin:"自動同期はオンライン版（GitHub Pages）でのみ動作します。ローカルファイルでは①か②を使ってください。",
+  calGuide:"📘 クライアントIDの作り方（約10分・初回のみ）",
+  calGuideBody:"上記アカウントで <b>console.cloud.google.com</b> にログインし：<ol style='margin:6px 0 0 18px;line-height:1.8'><li>新しいプロジェクトを作成（例：<i>MBA UWTSD</i>）。</li><li><b>APIとサービス → ライブラリ</b> →「Google Calendar API」→ <b>有効にする</b>。</li><li><b>OAuth同意画面</b> → ユーザーの種類 <b>外部</b> → アプリ名とメールを入力 → <b>テストユーザー</b>に自分のメールアドレスを追加。</li><li><b>認証情報 → 認証情報を作成 → OAuthクライアントID</b> → 種類 <b>ウェブアプリケーション</b> → <b>承認済みのJavaScript生成元</b>に <code>{ORIGIN}</code> → 作成。</li><li><b>クライアントID</b>（末尾 <code>.apps.googleusercontent.com</code>）をコピー → 上の欄に貼り付け → 同期 → Googleの画面で許可。</li></ol><div class='small-note'>クライアントIDはパスワードではないので、ここに保存して問題ありません。<i>クライアントシークレット</i>やGoogleのパスワードは絶対に貼り付けないでください。</div>",
+  calLinkT:"Googleカレンダーに追加"
+}};
+for(const l in I18N_K) Object.assign(I18N[l],I18N_K[l]);
+
+let LANG=LS.getItem("mba_lang")||"id";
 const T=()=>I18N[LANG];
 
 /* ============================================================
@@ -274,19 +476,27 @@ const T=()=>I18N[LANG];
    daftar berkas) + kerangka aplikasi.
    ============================================================ */
 const SEED = {
-  settings:{ intakeDate:"2026-10-01", targetLabel:"Intake" },
+  settings:{ intakeDate:"", orientDate:"", endDate:"", targetLabel:"", weeklyTarget:20,
+             calEmail:"", clsStart:"", clsEnd:"", gcalClientId:"", gcalCalId:"" },
   weeklyActions:[],
   milestones:[
-    {t:"【1】出願意思表示 + 選考料 ¥36,000",due:"",d:false},
-    {t:"【2】出願書類一式データ仮提出（Word形式）",due:"",d:false},
-    {t:"【3】事務局より修正項目の案内",due:"",d:false},
-    {t:"【4】出願書類データ本提出",due:"",d:false},
-    {t:"【5】必要物一式を郵送",due:"",d:false},
-    {t:"【6】選考面接（オンライン・日本語）",due:"",d:false},
-    {t:"【7】合否通知",due:"",d:false},
-    {t:"受給資格確認（ハローワーク）完了 — 開講14日前まで",due:"",d:false},
-    {t:"入学料・受講料の納入 → 開講",due:"",d:false}
+    {t:"年間スケジュールを受け取り、授業日をすべて登録する",due:"",d:false},
+    {t:"秋学期終了 — 出席率80%以上を確認",due:"",d:false},
+    {t:"教育訓練給付金 第1回 支給申請（領収書・受講証明書）",due:"",d:false},
+    {t:"春学期終了 — 出席率80%以上を確認",due:"",d:false},
+    {t:"修了",due:"",d:false}
   ],
+  semesters:[
+    {id:"S1",name:"Semester 1",from:"",to:""},
+    {id:"S2",name:"Semester 2",from:"",to:""},
+    {id:"S3",name:"Semester 3",from:"",to:""},
+    {id:"S4",name:"Semester 4",from:"",to:""}
+  ],
+  sessions:[],
+  assignments:[],
+  notes:[],
+  thesis:{theme:"",rq:"",perm:"Belum",sup:"",note:""},
+  thesisPlan:[],
   berkas:[
     {t:"入学申請用紙",s:"Belum",n:""},
     {t:"UWTSD指定申請用紙",s:"Belum",n:""},
@@ -298,22 +508,8 @@ const SEED = {
     {t:"選考料 ¥36,000 振込記録",s:"Belum",n:""},
     {t:"返信用封筒（¥140切手）",s:"Belum",n:""}
   ],
-  helloWork:[
-    {t:"訓練前キャリアコンサルティングの予約（carigaku.mhlw.go.jp）",d:false},
-    {t:"ジョブ・カード作成＋コンサルタントの署名",d:false},
-    {t:"必要書類の準備（マイナンバーカード／在留カード、写真2枚、通帳、雇用保険被保険者証）",d:false},
-    {t:"受給資格確認（居住地のハローワーク）— 開講14日前まで",d:false},
-    {t:"受給資格確認通知書の受領・保管",d:false}
-  ],
-  payments:[
-    {dt:"",item:"選考料",amt:36000,paid:false},
-    {dt:"",item:"入学料（1年目 学生登録料を含む）",amt:528000,paid:false},
-    {dt:"",item:"受講料 1年目",amt:1452000,paid:false},
-    {dt:"",item:"教育充実費＋認証費用 1年目",amt:77000,paid:false},
-    {dt:"",item:"学生登録料 2年目（一括払いの場合は免除）",amt:264000,paid:false},
-    {dt:"",item:"受講料 2年目",amt:1452000,paid:false},
-    {dt:"",item:"教育充実費＋認証費用 2年目",amt:77000,paid:false}
-  ],
+  helloWork:[],
+  payments:[],
   kyufu:[
     {p:"支給単位期間 1（1〜6ヶ月）— 50%",dt:"",amt:0,done:false},
     {p:"支給単位期間 2（7〜12ヶ月）— 50%",dt:"",amt:0,done:false},
@@ -323,13 +519,13 @@ const SEED = {
     {p:"賃金上昇 +10%（5%以上の上昇）",dt:"",amt:0,done:false}
   ],
   modules:[
-    {t:"経営戦略（Strategic Management）",type:"Wajib",s:"Belum",note:""},
-    {t:"Marketing Management",type:"Wajib",s:"Belum",note:""},
-    {t:"組織・人材マネジメント（Organisation & HRM）",type:"Wajib",s:"Belum",note:""},
-    {t:"Finance Management",type:"Wajib",s:"Belum",note:""},
-    {t:"選択科目 1（Innovation / Accounting / Leadership / Negotiation）",type:"Pilihan",s:"Belum",note:""},
-    {t:"選択科目 2（Innovation / Accounting / Leadership / Negotiation）",type:"Pilihan",s:"Belum",note:""},
-    {t:"修士論文（60単位・日本語19,500字以内）",type:"Tesis",s:"Belum",note:""}
+    {t:"ストラテジック・マネジメント",type:"Wajib",sem:"S1",s:"Belum",g:"",note:""},
+    {t:"選択科目 1",type:"Pilihan",sem:"S1",s:"Belum",g:"",note:""},
+    {t:"マーケティング・マネジメント",type:"Wajib",sem:"S2",s:"Belum",g:"",note:""},
+    {t:"組織及びHRマネジメント",type:"Wajib",sem:"S2",s:"Belum",g:"",note:""},
+    {t:"ファイナンス・マネジメント",type:"Wajib",sem:"S3",s:"Belum",g:"",note:""},
+    {t:"選択科目 2",type:"Pilihan",sem:"S3",s:"Belum",g:"",note:""},
+    {t:"修士論文（60単位・日本語19,500字以内）",type:"Tesis",sem:"S4",s:"Belum",g:"",note:""}
   ],
   studyLog:[],
   thesisIdeas:[],
@@ -415,45 +611,75 @@ function copySection(di,si,btnId){
 
 /* ================= STATE ================= */
 const KEY="mba_uwtsd_system_v1";
-let S = load();
-function load(){
-  try{ const raw=localStorage.getItem(KEY); if(raw){
-    const s=Object.assign(JSON.parse(JSON.stringify(SEED)),JSON.parse(raw));
-    // Draf built-in (versi privat) disalin ke data agar ikut terbawa saat 💾 Simpan Data
-    if((!s.drafts||!s.drafts.length)&&DRAFTS.length) s.drafts=JSON.parse(JSON.stringify(DRAFTS));
-    if(s.schemaVer!==4){
-      s.berkas=JSON.parse(JSON.stringify(SEED.berkas));
-      if(DRAFTS.length) s.drafts=JSON.parse(JSON.stringify(DRAFTS));
-      s.milestones=JSON.parse(JSON.stringify(SEED.milestones));
-      s.weeklyActions=JSON.parse(JSON.stringify(SEED.weeklyActions));
-      s.contacts=JSON.parse(JSON.stringify(SEED.contacts));
-      s.myFields=JSON.parse(JSON.stringify(SEED.myFields));
-      s.mySuggestions=JSON.parse(JSON.stringify(SEED.mySuggestions));
-      s.schemaVer=4;
-    }
-    return s;
-  } }catch(e){}
-  const f=JSON.parse(JSON.stringify(SEED)); f.schemaVer=4;
-  if(DRAFTS.length) f.drafts=JSON.parse(JSON.stringify(DRAFTS));
-  return f;
+let S; // diisi load() setelah semua helper didefinisikan (lihat di bawah migrate)
+const CUR_SCHEMA=5;
+const cp=x=>JSON.parse(JSON.stringify(x));
+const uid=p=>(p||"x")+"-"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+/* Membawa data lama (localStorage / file JSON) ke struktur terbaru tanpa membuang isian pengguna.
+   Daftar lama yang diganti disimpan di s.archiveV4 supaya tidak ada yang hilang. */
+function migrate(raw){
+  const s=Object.assign(cp(SEED),raw);
+  if((!s.drafts||!s.drafts.length)&&DRAFTS.length) s.drafts=cp(DRAFTS);
+  if(!s.schemaVer||s.schemaVer<4){
+    s.berkas=cp(SEED.berkas);
+    if(DRAFTS.length) s.drafts=cp(DRAFTS);
+    s.milestones=cp(SEED.milestones); s.weeklyActions=cp(SEED.weeklyActions);
+    s.contacts=cp(SEED.contacts); s.myFields=cp(SEED.myFields); s.mySuggestions=cp(SEED.mySuggestions);
+    s.schemaVer=4;
+  }
+  if(s.schemaVer<5){ // fase pendaftaran → fase kuliah
+    s.archiveV4={weeklyActions:s.weeklyActions,milestones:s.milestones,berkas:cp(s.berkas||[]),helloWork:cp(s.helloWork||[]),
+      payments:cp(s.payments||[]),kyufu:cp(s.kyufu||[]),modules:cp(s.modules||[]),settings:cp(s.settings||{})};
+    const untouched=(a,f)=>!a||!a.length||a.every(f);
+    s.settings=Object.assign(cp(SEED.settings),{weeklyTarget:(s.settings&&s.settings.weeklyTarget)||SEED.settings.weeklyTarget});
+    s.weeklyActions=cp(SEED.weeklyActions);
+    s.milestones=cp(SEED.milestones);
+    (s.berkas||[]).forEach(b=>b.s="Selesai");
+    if(SEED.helloWork.length) s.helloWork=cp(SEED.helloWork);
+    if(untouched(s.payments,p=>!p.paid&&!p.dt)&&SEED.payments.length) s.payments=cp(SEED.payments);
+    if(untouched(s.kyufu,k=>!k.done&&!k.amt&&!k.dt)&&SEED.kyufu.length) s.kyufu=cp(SEED.kyufu);
+    if(untouched(s.modules,m=>m.s==="Belum")&&SEED.modules.length) s.modules=cp(SEED.modules);
+    s.schemaVer=5;
+  }
+  // kunci baru & id stabil (dipakai sinkron kalender dan tautan catatan)
+  ["semesters","sessions","assignments","notes","thesisPlan","studyLog"].forEach(k=>{ if(!Array.isArray(s[k])) s[k]=cp(SEED[k]||[]); });
+  if(!s.thesis) s.thesis=cp(SEED.thesis);
+  s.settings=Object.assign(cp(SEED.settings),s.settings||{});
+  if(!s.gcalMap) s.gcalMap={};
+  s.sessions.forEach(x=>{ if(!x.id)x.id=uid("s"); if(!x.sem)x.sem=semOf(x.dt,s); if(x.att===undefined)x.att=""; });
+  s.assignments.forEach(x=>{ if(!x.id)x.id=uid("a"); });
+  s.milestones.forEach(x=>{ if(!x.id)x.id=uid("m"); });
+  s.thesisPlan.forEach(x=>{ if(!x.id)x.id=uid("t"); });
+  s.modules.forEach(m=>{ if(m.g===undefined)m.g=""; if(!m.sem)m.sem=""; });
+  s.notes.forEach(n=>{ if(!n.id)n.id=uid("n"); });
+  return s;
 }
-function save(){ localStorage.setItem(KEY,JSON.stringify(S)); render(); }
-function setLang(l){ LANG=l; localStorage.setItem("mba_lang",l); document.documentElement.lang=l; render(); }
+function semOf(dt,st){ const list=((st||S)||{}).semesters||SEED.semesters||[];
+  const f=list.find(x=>x.from&&x.to&&dt&&x.from<=dt&&dt<=x.to); return f?f.id:((list[0]||{}).id||"S1"); }
+function load(){
+  try{ const raw=LS.getItem(KEY); if(raw) return migrate(JSON.parse(raw)); }catch(e){}
+  const f=migrate({}); f.schemaVer=CUR_SCHEMA; return f;
+}
+S = load();
+function saveQuiet(){ try{ LS.setItem(KEY,JSON.stringify(S)); }catch(e){ alert("Penyimpanan browser penuh / diblokir: "+e.message); } }
+function save(){ saveQuiet(); render(); }
+function setLang(l){ LANG=l; LS.setItem("mba_lang",l); document.documentElement.lang=l; render(); }
 function exportJSON(){
   const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download="mba-uwtsd-data.json"; a.click();
-  localStorage.setItem("mba_last_export",Date.now()); render();
+  LS.setItem("mba_last_export",Date.now()); render();
 }
 function importJSON(ev){
   const f=ev.target.files[0]; if(!f)return;
   const r=new FileReader();
-  r.onload=()=>{ try{ S=Object.assign(JSON.parse(JSON.stringify(SEED)),JSON.parse(r.result));
-    localStorage.setItem("mba_last_export",Date.now()); save(); alert("OK ✔"); }catch(e){ alert("Invalid file"); } };
+  r.onload=()=>{ try{ S=migrate(JSON.parse(r.result)); curNote=null;
+    LS.setItem("mba_last_export",Date.now()); save(); alert("OK ✔"); }catch(e){ alert("Invalid file"); } };
+  ev.target.value="";
   r.readAsText(f);
 }
 function daysSinceBackup(){
-  const t=Number(localStorage.getItem("mba_last_export")||0);
+  const t=Number(LS.getItem("mba_last_export")||0);
   if(!t) return null; // belum pernah backup
   return Math.floor((Date.now()-t)/86400000);
 }
@@ -464,8 +690,32 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 function daysTo(dateStr){ if(!dateStr)return null; const d=(new Date(dateStr+"T00:00:00")-new Date().setHours(0,0,0,0))/86400000; return Math.round(d); }
 function pct(list,f){ if(!list.length)return 0; return Math.round(100*list.filter(f).length/list.length); }
 
+/* ================= HELPERS (fase kuliah) ================= */
+function localStr(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function todayStr(){ return localStr(new Date()); }
+function addDays(ds,n){ const d=new Date(ds+"T00:00:00"); d.setDate(d.getDate()+n); return localStr(d); }
+function weekStart(ds){ const d=new Date(ds+"T00:00:00"); d.setDate(d.getDate()-((d.getDay()+6)%7)); return localStr(d); }
+const WD={id:["Min","Sen","Sel","Rab","Kam","Jum","Sab"],en:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],ja:["日","月","火","水","木","金","土"]};
+function wday(ds){ return ds?WD[LANG][new Date(ds+"T00:00:00").getDay()]:""; }
+function curSem(){ return semOf(todayStr(),S); }
+const fmtH=h=>(Math.round(h*10)/10).toString();
+const DONE_ASG=["Terkirim","Dinilai"];
+let semSel=null;
+function attStats(sem){
+  const list=S.sessions.filter(x=>x.sem===sem&&!x.nc);
+  const hadir=list.filter(x=>x.att==="hadir").length;
+  const absent=list.filter(x=>x.att==="absen"||x.att==="rekaman").length;
+  const recorded=hadir+absent, total=list.length, allowed=Math.floor(total*0.2);
+  return {total,hadir,absent,recorded,allowed,left:allowed-absent,pct:recorded?Math.round(100*hadir/recorded):null};
+}
+function hoursWeek(ws){ return S.studyLog.filter(l=>l.d&&weekStart(l.d)===ws).reduce((a,l)=>a+Number(l.h||0),0); }
+function modOpts(sel){ return `<option value="">—</option>`+S.modules.map(m=>`<option ${m.t===sel?"selected":""}>${esc(m.t)}</option>`).join(""); }
+function dayBadge(ds){ const d=daysTo(ds); if(d===null)return ""; const c=d<0?"var(--bad)":d<=7?"var(--warn)":"var(--sub)";
+  return `<span class="sub" style="color:${c};white-space:nowrap">${d<0?T().late+" "+(-d):d===0?T().todayIs:d} ${d===0?"":T().days}</span>`; }
+
 /* ================= RENDER ================= */
-let cur="dash";
+let cur=LS.getItem("mba_tab")||"dash";
+function go(id){ cur=id; try{LS.setItem("mba_tab",id);}catch(e){} render(); window.scrollTo(0,0); }
 function render(){
   const t=T();
   document.getElementById("hTitle").textContent=t.title;
@@ -474,64 +724,68 @@ function render(){
   document.getElementById("btnImp").textContent=t.imp;
   document.getElementById("bkNote").textContent=t.bkNote;
   document.getElementById("langs").innerHTML=["id","en","ja"].map(l=>`<button class="${LANG===l?'on':''}" onclick="setLang('${l}')">${{id:"ID",en:"EN",ja:"日本語"}[l]}</button>`).join("");
-  document.getElementById("nav").innerHTML=Object.entries(t.tabs).map(([id,l])=>`<button class="${cur===id?'active':''}" onclick="cur='${id}';render()">${l}</button>`).join("");
-  document.getElementById("main").innerHTML={dash:vDash,daftar:vDaftar,draf:vDraf,dana:vDana,kuliah:vKuliah,tesis:vTesis,me:vMe}[cur]();
+  const V={dash:vDash,kuliah:vKuliah,notes:vNotes,tesis:vTesis,dana:vDana,draf:vDraf,daftar:vDaftar,me:vMe};
+  if(!V[cur]) cur="dash";
+  document.getElementById("nav").innerHTML=Object.entries(t.tabs).map(([id,l])=>`<button class="${cur===id?'active':''}" onclick="go('${id}')">${l}</button>`).join("");
+  document.getElementById("main").innerHTML=V[cur]();
+  if(cur==="notes") initEditor();
+  if(cur==="kuliah"&&S.settings.gcalClientId&&/^https?:$/.test(location.protocol)) loadGIS().catch(()=>{});
 }
 
 /* ================= VIEWS ================= */
 function vDash(){
-  const t=T();
-  const dIntake=daysTo(S.settings.intakeDate);
-  const hwDeadline=new Date(new Date(S.settings.intakeDate+"T00:00:00")-14*86400000);
-  const hwStr=hwDeadline.toISOString().slice(0,10);
-  const dHW=daysTo(hwStr);
-  const pBerkas=pct(S.berkas,b=>b.s==="Selesai");
-  const pHW=pct(S.helloWork,x=>x.d);
-  const pModul=pct(S.modules,x=>x.s==="Lulus");
-  const nextMs=S.milestones.filter(x=>!x.d).slice().sort((a,b)=>(a.due||'9999')<(b.due||'9999')?-1:1).slice(0,4);
-  const p=S.milestones.find(x=>!x.d&&x.t.indexOf("選考料")>-1);const dp=p?daysTo(p.due):null;
-  const payLbl=dp===null?"":dp<0?`${t.late} ${-dp} ${t.days}`:dp===0?t.todayIs:`${t.left} ${dp} ${t.days}`.trim();
+  const t=T(), td=todayStr(), st=S.settings;
+  const next=S.sessions.filter(x=>x.dt&&x.dt>=td).sort((a,b)=>a.dt<b.dt?-1:1)[0];
+  const beforeStart=st.intakeDate&&td<st.intakeDate;
+  const dN=next?daysTo(next.dt):daysTo(st.intakeDate);
+  const sem=curSem(), a=attStats(sem);
+  const tgt=Number(st.weeklyTarget||20), hw=hoursWeek(weekStart(td));
+  const unrec=S.sessions.filter(x=>x.dt&&x.dt<td&&!x.att&&!x.nc).length;
+  const over=S.assignments.filter(x=>x.due&&x.due<td&&!DONE_ASG.includes(x.s)).length;
+  const semCount=S.sessions.filter(x=>x.sem===sem&&!x.nc).length;
+  const up=[];
+  S.sessions.filter(x=>x.dt&&x.dt>=td).sort((p,q)=>p.dt<q.dt?-1:1).slice(0,3).forEach(x=>up.push({d:x.dt,k:t.kCls,x:x.t||x.mod}));
+  S.assignments.filter(x=>x.due&&!DONE_ASG.includes(x.s)).forEach(x=>up.push({d:x.due,k:t.kAsg,x:x.t+(x.mod?" · "+x.mod:"")}));
+  S.milestones.filter(x=>x.due&&!x.d).forEach(x=>up.push({d:x.due,k:t.kMs,x:x.t}));
+  up.sort((p,q)=>p.d<q.d?-1:1);
+  const pMod=pct(S.modules,m=>m.s==="Lulus"), pAsg=pct(S.assignments,x=>DONE_ASG.includes(x.s)), pTh=pct(S.thesisPlan,x=>x.d);
+  const bar=(lbl,p)=>`<div class="card"><h2>${lbl}</h2><div class="bar"><div style="width:${p}%"></div></div><div class="sub" style="margin-top:6px">${p}%</div></div>`;
   return `
   <div class="grid c3">
-    <div class="card"><div class="sub">${esc(S.settings.targetLabel)} ${t.cdIntake}</div>
-      <div class="big">${dIntake!==null?dIntake+" "+t.days:"—"}</div>
-      <div class="sub">${t.intakeLbl} <input type="date" value="${S.settings.intakeDate}" onchange="S.settings.intakeDate=this.value;save()"></div></div>
-    <div class="card"><div class="sub">${t.cdHW}</div>
-      <div class="big" style="color:${dHW!==null&&dHW<30?'var(--bad)':'var(--warn)'}">${dHW!==null?dHW+" "+t.days:"—"}</div>
-      <div class="sub">${hwStr} — ${t.hwNote}</div></div>
-    <div class="card"><div class="sub">${t.subsidy}</div>
-      <div class="big" style="color:var(--acc2)">¥1.28M</div>
-      <div class="sub">${t.subsidyNote}</div></div>
+    <div class="card"><div class="sub">${beforeStart&&(!next||next.dt>=st.intakeDate)?t.cdStart:t.cdNext}</div>
+      <div class="big">${dN===null?"—":dN===0?t.todayIs:dN+" "+t.days}</div>
+      <div class="sub">${next?`${next.dt} (${wday(next.dt)}) — ${esc(next.t||next.mod)}`:t.noSess}</div></div>
+    <div class="card"><div class="sub">${t.attCard} · ${esc((S.semesters.find(x=>x.id===sem)||{}).name||sem)}</div>
+      <div class="big" style="color:${a.pct!==null&&a.pct<80?'var(--bad)':'var(--acc2)'}">${a.pct===null?"—":a.pct+"%"}</div>
+      <div class="sub">${a.recorded?t.attSub(a.hadir,a.recorded,Math.max(0,a.left)):t.attNone}</div></div>
+    <div class="card"><div class="sub">${t.hrsCard}</div>
+      <div class="big">${fmtH(hw)}<span style="font-size:1rem;color:var(--sub)"> / ${tgt}</span></div>
+      <div class="bar" style="margin-top:4px"><div style="width:${Math.min(100,tgt?100*hw/tgt:0)}%"></div></div>
+      <div class="sub" style="margin-top:4px">${t.hrsSub(tgt)}</div></div>
   </div>
-  ${p&&dp!==null&&dp<=3?`<div class="alert red">${t.payAlert(payLbl)}</div>`:""}
-  ${dHW!==null&&dHW<45?`<div class="alert red">${t.hwAlert(dHW)}</div>`:""}
   ${(()=>{const b=daysSinceBackup();return b!==null&&b>=7?`<div class="alert">${t.bkAlert(b)}</div>`:"";})()}
-  <div class="grid c3">
-    <div class="card"><h2>${t.pBerkas}</h2><div class="bar"><div style="width:${pBerkas}%"></div></div><div class="sub" style="margin-top:6px">${pBerkas}${t.pctDone}</div></div>
-    <div class="card"><h2>${t.pHW}</h2><div class="bar"><div style="width:${pHW}%"></div></div><div class="sub" style="margin-top:6px">${pHW}${t.pctDone}</div></div>
-    <div class="card"><h2>${t.pModul}</h2><div class="bar"><div style="width:${pModul}%"></div></div><div class="sub" style="margin-top:6px">${pModul}${t.pctPass}</div></div>
-  </div>
+  ${semCount<5?`<div class="alert">${t.alSched}</div>`:""}
+  ${unrec?`<div class="alert">${t.alUnrec(unrec)}</div>`:""}
+  ${a.recorded>=3&&a.pct<80?`<div class="alert red">${t.alAtt(a.pct)}</div>`:a.total>=5&&a.left<=1?`<div class="alert red">${t.alLeft(Math.max(0,a.left))}</div>`:""}
+  ${over?`<div class="alert red">${t.alOver(over)}</div>`:""}
   <div class="grid c2">
+    <div class="card"><h2>${t.upTitle}</h2>
+      ${up.length?up.slice(0,8).map(x=>`<div class="up-row"><b>${x.d.slice(5).replace("-","/")}</b><span class="chip">${x.k}</span><span style="flex:1">${esc(x.x)}</span>${dayBadge(x.d)}</div>`).join(""):`<div class="sub">${t.upNone}</div>`}</div>
     <div class="card"><h2>${t.weekly}</h2>
-      ${S.weeklyActions.map((a,i)=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0">
-        <input type="checkbox" ${a.d?"checked":""} onchange="S.weeklyActions[${i}].d=this.checked;save()">
-        <span class="${a.d?'done':''}" style="flex:1;font-size:.85rem">${esc(a.t)}</span>
+      ${S.weeklyActions.map((w,i)=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0">
+        <input type="checkbox" ${w.d?"checked":""} onchange="S.weeklyActions[${i}].d=this.checked;save()">
+        <span class="${w.d?'done':''}" style="flex:1;font-size:.85rem">${esc(w.t)}</span>
         <span class="del" onclick="S.weeklyActions.splice(${i},1);save()">×</span></div>`).join("")}
       <div style="display:flex;gap:6px;margin-top:8px"><input id="newAct" placeholder="...">
       <button class="btn small" onclick="const v=document.getElementById('newAct').value.trim();if(v){S.weeklyActions.push({t:v,d:false});save()}">${t.add}</button></div></div>
-    <div class="card"><h2>${t.msNext}</h2>
-      ${nextMs.length?nextMs.map(ms=>{const d=daysTo(ms.due);return `<div style="padding:6px 0;border-bottom:1px solid var(--line);font-size:.85rem">
-        <b style="color:${d!==null&&d<7?'var(--bad)':'var(--ink)'}">${ms.due}</b> (${d} ${t.days}) — ${esc(ms.t)}</div>`;}).join(""):`<div class='sub'>${t.msDone}</div>`}
-      <div class="small-note">${t.msAll}</div></div>
   </div>
-  <div class="card"><h2>${t.brand}</h2>
-    ${t.brandChips.map(c=>`<span class="chip">${c}</span>`).join(" ")}
-    <div class="sub" style="margin-top:8px">${t.brandText}</div></div>`;
+  <div class="grid c3">${bar(t.pMod,pMod)}${bar(t.pAsg,pAsg)}${bar(t.pThesis,pTh)}</div>`;
 }
 
 function vDaftar(){
   const t=T();
   return `
+  <div class="alert" style="border-color:var(--acc2)">${t.archNote}</div>
   <div class="alert">${t.routeAlert}</div>
   <div class="card"><h2>${t.ckTitle}</h2>
     <table><tr><th>${t.colDoc}</th><th style="width:110px">${t.colStatus}</th><th>${t.colNote}</th></tr>
@@ -588,41 +842,175 @@ function vDana(){
       <td><input type="number" value="${k.amt}" onchange="S.kyufu[${i}].amt=Number(this.value);save()"></td></tr>`).join("")}</table></div>`;
 }
 
+/* ---------- Kuliah: aksi ---------- */
+function byId(list,id){ return list.find(x=>x.id===id); }
+function updSess(id,k,v){ const x=byId(S.sessions,id); if(x){ x[k]=v; save(); } }
+function delSess(id){ S.sessions=S.sessions.filter(x=>x.id!==id); save(); }
+function addSess(){
+  const d=document.getElementById("sD").value; if(!d) return;
+  S.sessions.push({id:uid("s"),sem:semSel||curSem(),dt:d,t:document.getElementById("sT").value.trim(),mod:document.getElementById("sM").value,att:""});
+  save();
+}
+function bulkAdd(){
+  const sem=semSel||curSem(); let n=0;
+  document.getElementById("bulkTxt").value.split(/\r?\n/).forEach(line=>{
+    const m=line.trim().match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})\s*(.*)$/); if(!m) return;
+    const dt=`${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+    if(S.sessions.some(x=>x.sem===sem&&x.dt===dt)) return;
+    S.sessions.push({id:uid("s"),sem,dt,t:m[4].trim(),mod:"",att:""}); n++;
+  });
+  save(); alert(T().bulkDone(n));
+}
+function updAsg(id,k,v){ const x=byId(S.assignments,id); if(x){ x[k]=v; save(); } }
+function addAsg(){
+  const x=document.getElementById("aT").value.trim(); if(!x) return;
+  S.assignments.push({id:uid("a"),mod:document.getElementById("aM").value,t:x,due:document.getElementById("aD").value,s:"Belum",g:""});
+  save();
+}
+function addLog(){
+  const d=document.getElementById("slD").value,h=document.getElementById("slH").value;
+  if(!d||!h) return;
+  S.studyLog.unshift({d,h:Number(h),m:document.getElementById("slM").value,t:document.getElementById("slT").value.trim()});
+  S.studyLog.sort((a,b)=>a.d<b.d?1:-1); save();
+}
+
+/* ---------- Kuliah: tampilan ---------- */
 function vKuliah(){
-  const t=T();
-  const totJam=S.studyLog.reduce((a,l)=>a+Number(l.h||0),0);
+  const t=T(), td=todayStr();
+  if(!semSel||!S.semesters.find(x=>x.id===semSel)) semSel=curSem();
+  const a=attStats(semSel);
+  const sess=S.sessions.filter(x=>x.sem===semSel).sort((p,q)=>(p.dt||"")<(q.dt||"")?-1:1);
+  const asg=S.assignments.slice().sort((p,q)=>{ const dp=DONE_ASG.includes(p.s),dq=DONE_ASG.includes(q.s);
+    if(dp!==dq) return dp?1:-1; return (p.due||"9999")<(q.due||"9999")?-1:1; });
+  const tgt=Number(S.settings.weeklyTarget||20);
+  const weeks=[]; for(let i=7;i>=0;i--){ const ws=addDays(weekStart(td),-7*i); weeks.push({ws,h:hoursWeek(ws)}); }
+  const mx=Math.max(tgt,...weeks.map(w=>w.h),1);
+  const totJam=S.studyLog.reduce((s,l)=>s+Number(l.h||0),0);
+  const st=S.settings;
   return `
   <div class="alert">${t.learnAlert}</div>
-  <div class="card"><h2>${t.modTitle}</h2>
-    <table><tr><th>${t.colMod}</th><th style="width:90px">${t.colType}</th><th style="width:130px">${t.colStatus}</th><th>${t.colNote}</th></tr>
-    ${S.modules.map((md,i)=>`<tr><td>${esc(md.t)}</td><td><span class="chip">${t.mt[md.type]||md.type}</span></td>
-      <td><select onchange="S.modules[${i}].s=this.value;save()">
-        ${["Belum","Berjalan","Tugas","Lulus"].map(o=>`<option value="${o}" ${md.s===o?"selected":""}>${t.ms2[o]}</option>`).join("")}</select></td>
-      <td><input value="${esc(md.note)}" onchange="S.modules[${i}].note=this.value;save()"></td></tr>`).join("")}</table>
-    <div class="small-note">${t.modNote}</div></div>
-  <div class="card"><h2>${t.logTitle} <b>${totJam.toFixed(1)} ${t.hours}</b></h2>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-      <input type="date" id="slD"><input type="number" id="slH" placeholder="${t.colHours}" style="width:90px" step="0.5">
-      <input id="slT" placeholder="${t.logPh}" style="flex:1;min-width:200px">
-      <button class="btn small" onclick="const d=document.getElementById('slD').value,h=document.getElementById('slH').value,x=document.getElementById('slT').value.trim();if(d&&h){S.studyLog.unshift({d:d,h:Number(h),t:x});save()}">${t.logBtn}</button></div>
-    <table><tr><th style="width:130px">${t.colDate}</th><th style="width:70px">${t.colHours}</th><th>${t.colWhat}</th><th></th></tr>
-    ${S.studyLog.slice(0,30).map((l,i)=>`<tr><td>${l.d}</td><td>${l.h}</td><td>${esc(l.t)}</td>
-      <td><span class="del" onclick="S.studyLog.splice(${i},1);save()">×</span></td></tr>`).join("")}</table>
+
+  <div class="card"><h2>${t.semTitle}</h2>
+    <div class="semtabs">${S.semesters.map(x=>`<button class="${x.id===semSel?'on':''}" onclick="semSel='${x.id}';render()">${esc(x.name)}</button>`).join("")}</div>
+    <div class="sub" style="margin-bottom:8px">${t.attStat(a.hadir,a.recorded,a.total,a.allowed,Math.max(0,a.left))}</div>
+    <div class="tbl-wrap"><table><tr><th style="width:140px">${t.colDate}</th><th style="width:44px">${t.colDay}</th><th>${t.colSess}</th><th style="width:180px">${t.colAtt}</th><th style="width:78px"></th></tr>
+    ${sess.length?sess.map(x=>{ const past=x.dt&&x.dt<td;
+      return `<tr style="${!past&&x.dt===td?'background:var(--chip)':''}">
+      <td><input type="date" value="${x.dt||""}" onchange="updSess('${x.id}','dt',this.value)"></td>
+      <td>${wday(x.dt)}</td>
+      <td><input value="${esc(x.t)}" placeholder="${t.sessPh}" onchange="updSess('${x.id}','t',this.value)" style="margin-bottom:4px">
+          <select onchange="updSess('${x.id}','mod',this.value)">${modOpts(x.mod)}</select></td>
+      <td>${x.nc?`<span class="chip">${t.nc}</span>`:`<select class="att-${x.att}" onchange="updSess('${x.id}','att',this.value)" style="${past&&!x.att?'border-color:var(--warn)':''}">
+          ${Object.entries(t.att).map(([k,l])=>`<option value="${k}" ${x.att===k?"selected":""}>${l}</option>`).join("")}</select>`}</td>
+      <td style="white-space:nowrap"><a href="${gcalLink(sessItem(x))}" target="_blank" rel="noopener" title="${t.calLinkT}" style="text-decoration:none">📅</a>
+        <span style="cursor:pointer" title="${t.nFromSess}" onclick="noteForSession('${x.id}')">📓</span>
+        <span class="del" onclick="delSess('${x.id}')">×</span></td></tr>`;}).join(""):`<tr><td colspan="5" class="sub">${t.noSessSem}</td></tr>`}
+    </table></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+      <input type="date" id="sD"><input id="sT" placeholder="${t.sessPh}" style="flex:1;min-width:160px">
+      <select id="sM" style="width:auto;max-width:220px">${modOpts("")}</select>
+      <button class="btn small" onclick="addSess()">${t.addSess}</button></div>
+    <details><summary>${t.bulkTitle}</summary>
+      <textarea id="bulkTxt" rows="6" placeholder="${esc(t.bulkPh)}" style="margin-top:8px"></textarea>
+      <button class="btn small" style="margin-top:6px" onclick="bulkAdd()">${t.bulkBtn}</button></details>
+    <div class="small-note">${t.attRule}</div></div>
+
+  <div class="card"><h2>${t.modTitle2}</h2>
+    <div class="tbl-wrap"><table><tr><th>${t.colMod}</th><th style="width:78px">${t.colSem}</th><th style="width:80px">${t.colType}</th><th style="width:120px">${t.colStatus}</th><th style="width:70px">${t.colGrade}</th><th>${t.colNote}</th></tr>
+    ${S.modules.map((m,i)=>`<tr><td><input value="${esc(m.t)}" onchange="S.modules[${i}].t=this.value;save()"></td>
+      <td><select onchange="S.modules[${i}].sem=this.value;save()">${S.semesters.map(x=>`<option value="${x.id}" ${m.sem===x.id?"selected":""}>${x.id}</option>`).join("")}</select></td>
+      <td><span class="chip">${t.mt[m.type]||m.type}</span></td>
+      <td><select onchange="S.modules[${i}].s=this.value;save()">${["Belum","Berjalan","Tugas","Lulus"].map(o=>`<option value="${o}" ${m.s===o?"selected":""}>${t.ms2[o]}</option>`).join("")}</select></td>
+      <td><input value="${esc(m.g)}" onchange="S.modules[${i}].g=this.value;save()"></td>
+      <td><input value="${esc(m.note)}" onchange="S.modules[${i}].note=this.value;save()"></td></tr>`).join("")}</table></div>
+    <div class="small-note">${t.modNote2}</div></div>
+
+  <div class="card"><h2>${t.asgTitle}</h2>
+    <div class="tbl-wrap"><table><tr><th style="width:140px">${t.colDue}</th><th>${t.colItem}</th><th style="width:130px">${t.colStatus}</th><th style="width:70px">${t.colGrade}</th><th style="width:56px"></th></tr>
+    ${asg.length?asg.map(x=>{ const done=DONE_ASG.includes(x.s);
+      return `<tr><td><input type="date" value="${x.due||""}" onchange="updAsg('${x.id}','due',this.value)">${!done&&x.due?"<br>"+dayBadge(x.due):""}</td>
+      <td><input class="${done?'done':''}" value="${esc(x.t)}" onchange="updAsg('${x.id}','t',this.value)" style="margin-bottom:4px">
+          <select onchange="updAsg('${x.id}','mod',this.value)">${modOpts(x.mod)}</select></td>
+      <td><select onchange="updAsg('${x.id}','s',this.value)">${Object.entries(t.ast).map(([k,l])=>`<option value="${k}" ${x.s===k?"selected":""}>${l}</option>`).join("")}</select></td>
+      <td><input value="${esc(x.g)}" onchange="updAsg('${x.id}','g',this.value)"></td>
+      <td style="white-space:nowrap">${x.due?`<a href="${gcalLink({title:"📝 MBA 締切: "+x.t,date:x.due,desc:x.mod||""})}" target="_blank" rel="noopener" title="${t.calLinkT}" style="text-decoration:none">📅</a>`:""}
+        <span class="del" onclick="S.assignments=S.assignments.filter(y=>y.id!=='${x.id}');save()">×</span></td></tr>`;}).join(""):`<tr><td colspan="5" class="sub">${t.asgNone}</td></tr>`}
+    </table></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+      <input type="date" id="aD"><input id="aT" placeholder="${t.asgPh}" style="flex:1;min-width:160px">
+      <select id="aM" style="width:auto;max-width:220px">${modOpts("")}</select>
+      <button class="btn small" onclick="addAsg()">${t.add}</button></div></div>
+
+  <div class="card"><h2>${t.hrsTitle} — ${fmtH(totJam)} ${t.hours}</h2>
+    <div class="sub">${t.tgtLbl} <input type="number" min="1" max="60" value="${tgt}" style="width:80px" onchange="S.settings.weeklyTarget=Number(this.value)||20;save()"></div>
+    <div class="sub" style="margin-top:8px">${t.wk8}</div>
+    <div class="wk"><div class="tgt" style="bottom:${100*tgt/mx}%"></div>
+      ${weeks.map((w,i)=>`<div class="col ${i===7?'now':''}" title="${w.ws}: ${fmtH(w.h)} ${t.hours}"><span style="font-size:.68rem;color:var(--sub)">${w.h?fmtH(w.h):""}</span><div style="height:${100*w.h/mx}%"></div></div>`).join("")}</div>
+    <div class="wk-lbl">${weeks.map((w,i)=>`<span>${i===7?t.wkNow:w.ws.slice(5).replace("-","/")}</span>`).join("")}</div>
+    <div class="small-note">${t.tgtNote}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 8px">
+      <input type="date" id="slD" value="${td}"><input type="number" id="slH" placeholder="${t.colHours}" style="width:90px" step="0.5" min="0">
+      <select id="slM" style="width:auto;max-width:200px">${modOpts("")}</select>
+      <input id="slT" placeholder="${t.logPh}" style="flex:1;min-width:160px">
+      <button class="btn small" onclick="addLog()">${t.logBtn}</button></div>
+    <div class="tbl-wrap"><table><tr><th style="width:110px">${t.colDate}</th><th style="width:60px">${t.colHours}</th><th>${t.colWhat}</th><th></th></tr>
+    ${S.studyLog.slice(0,30).map((l,i)=>`<tr><td>${l.d}</td><td>${l.h}</td><td>${l.m?`<span class="chip">${esc(l.m)}</span> `:""}${esc(l.t)}</td>
+      <td><span class="del" onclick="S.studyLog.splice(${i},1);save()">×</span></td></tr>`).join("")}</table></div>
     ${S.studyLog.length>30?`<div class="small-note">${t.logMore(30,S.studyLog.length)}</div>`:""}</div>
+
+  <div class="card"><h2>${t.calTitle}</h2>
+    <div class="grid c2">
+      <div class="sub">${t.calAcc}<input type="email" value="${esc(st.calEmail)}" onchange="S.settings.calEmail=this.value.trim();save()"></div>
+      <div class="sub">${t.calTime}<div style="display:flex;gap:6px;align-items:center">
+        <input type="time" value="${st.clsStart||""}" onchange="S.settings.clsStart=this.value;save()"> – <input type="time" value="${st.clsEnd||""}" onchange="S.settings.clsEnd=this.value;save()"></div>
+        <div class="small-note">${t.calTimeNote}</div></div>
+    </div>
+    <h2 style="margin-top:14px">${t.calA}</h2><div class="sub">${t.calANote}</div>
+    <h2 style="margin-top:14px">${t.calB}</h2>
+    <button class="btn green small" onclick="downloadICS()">${t.calBBtn}</button>
+    <div class="small-note">${t.calBNote}</div>
+    <h2 style="margin-top:14px">${t.calC}</h2><div class="sub">${t.calCNote}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">
+      <span class="sub">${t.calClient}</span>
+      <input id="gcid" value="${esc(st.gcalClientId)}" placeholder="xxxx.apps.googleusercontent.com" style="flex:1;min-width:220px" onchange="S.settings.gcalClientId=this.value.trim();save()">
+      <button class="btn small" onclick="gcalSync()">${t.calSync}</button></div>
+    <div id="calMsg" class="sub" style="margin-top:6px"></div>
+    <details><summary>${t.calGuide}</summary><div class="sub" style="margin-top:6px">${t.calGuideBody.replace(/\{ORIGIN\}/g,/^https?:$/.test(location.protocol)?location.origin:"https://&lt;username&gt;.github.io")}</div></details></div>
+
   <div class="card"><h2>${t.blockTitle}</h2>
     ${t.blocks.map(b=>`<span class="chip">${b}</span>`).join(" ")}
     <div class="sub" style="margin-top:6px">${t.blockNote}</div></div>`;
 }
 
+/* ---------- Tesis ---------- */
 function vTesis(){
-  const t=T();
+  const t=T(), th=S.thesis;
   return `
   <div class="alert">${t.thAlert}</div>
+  <div class="card"><h2>${t.thMain}</h2>
+    <div class="sub">${t.thTheme}</div>
+    <textarea rows="3" onchange="S.thesis.theme=this.value;save()">${esc(th.theme)}</textarea>
+    <div class="sub" style="margin-top:10px">${t.thRQ}</div>
+    <textarea rows="4" onchange="S.thesis.rq=this.value;save()">${esc(th.rq)}</textarea>
+    <div class="grid c2" style="margin-top:10px">
+      <div class="sub">${t.thPermL}<select onchange="S.thesis.perm=this.value;save()">${Object.entries(t.perm).map(([k,l])=>`<option value="${k}" ${th.perm===k?"selected":""}>${l}</option>`).join("")}</select></div>
+      <div class="sub">${t.thSupL}<input value="${esc(th.sup)}" onchange="S.thesis.sup=this.value;save()"></div>
+    </div>
+    <div class="sub" style="margin-top:10px">${t.thNoteL}</div>
+    <textarea rows="3" onchange="S.thesis.note=this.value;save()">${esc(th.note)}</textarea></div>
+  <div class="card"><h2>${t.thPlan}</h2>
+    <table><tr><th style="width:34px">✔</th><th>${t.colMs}</th><th style="width:150px">${t.colTarget}</th><th></th></tr>
+    ${S.thesisPlan.map((x,i)=>`<tr><td><input type="checkbox" ${x.d?"checked":""} onchange="S.thesisPlan[${i}].d=this.checked;save()"></td>
+      <td class="${x.d?'done':''}">${esc(x.t)}</td>
+      <td><input type="date" value="${x.due||""}" onchange="S.thesisPlan[${i}].due=this.value;save()"></td>
+      <td><span class="del" onclick="S.thesisPlan.splice(${i},1);save()">×</span></td></tr>`).join("")}</table>
+    <div style="display:flex;gap:6px;margin-top:8px"><input id="tpT" placeholder="${t.thPlanPh}"><input type="date" id="tpD">
+    <button class="btn small" onclick="const x=document.getElementById('tpT').value.trim();if(x){S.thesisPlan.push({id:uid('t'),t:x,due:document.getElementById('tpD').value,d:false});save()}">${t.add}</button></div></div>
   <div class="card"><h2>${t.thTitle}</h2>
     <table><tr><th>${t.colTopic}</th><th style="width:110px">${t.colScore}</th><th>${t.colNote}</th><th></th></tr>
-    ${S.thesisIdeas.map((th,i)=>`<tr><td><input value="${esc(th.t)}" onchange="S.thesisIdeas[${i}].t=this.value;save()"></td>
-      <td><input value="${esc(th.score)}" onchange="S.thesisIdeas[${i}].score=this.value;save()"></td>
-      <td><input value="${esc(th.note)}" onchange="S.thesisIdeas[${i}].note=this.value;save()"></td>
+    ${S.thesisIdeas.map((x,i)=>`<tr><td><input value="${esc(x.t)}" onchange="S.thesisIdeas[${i}].t=this.value;save()"></td>
+      <td><input value="${esc(x.score)}" onchange="S.thesisIdeas[${i}].score=this.value;save()"></td>
+      <td><input value="${esc(x.note)}" onchange="S.thesisIdeas[${i}].note=this.value;save()"></td>
       <td><span class="del" onclick="S.thesisIdeas.splice(${i},1);save()">×</span></td></tr>`).join("")}</table>
     <div style="display:flex;gap:6px;margin-top:8px"><input id="thT" placeholder="${t.thPh}">
     <button class="btn small" onclick="const v=document.getElementById('thT').value.trim();if(v){S.thesisIdeas.push({t:v,score:'',note:''});save()}">${t.add}</button></div></div>
@@ -706,8 +1094,230 @@ function vMe(){
     <div class="small-note">${t.sgNote}</div></div>`;
 }
 
+/* ================= CATATAN (ala Notion) ================= */
+let curNote=null, noteQ="", noteF="*", noteTimer=null;
+const NOTE_ALLOW={H1:1,H2:1,H3:1,P:1,DIV:1,BR:1,UL:1,OL:1,LI:1,BLOCKQUOTE:1,B:1,STRONG:1,I:1,EM:1,U:1,S:1,CODE:1,PRE:1,HR:1,A:1,SPAN:1};
+const NOTE_DROP=["SCRIPT","STYLE","IFRAME","OBJECT","EMBED","SVG","MATH","TEMPLATE","LINK","META","FORM","INPUT","BUTTON","TEXTAREA","SELECT","IMG","VIDEO","AUDIO"];
+function cleanNode(el){
+  [...el.childNodes].forEach(c=>{
+    if(c.nodeType===3) return;
+    if(c.nodeType!==1){ c.remove(); return; }
+    if(NOTE_DROP.includes(c.tagName)){ c.remove(); return; }
+    cleanNode(c);
+    if(!NOTE_ALLOW[c.tagName]){ c.replaceWith(...c.childNodes); return; }
+    [...c.attributes].forEach(a=>{ const n=a.name.toLowerCase();
+      const keep=(c.tagName==="UL"&&n==="class"&&a.value==="todo")||(c.tagName==="LI"&&n==="data-done"&&/^[01]$/.test(a.value))||(c.tagName==="A"&&n==="href"&&/^https?:\/\//i.test(a.value));
+      if(!keep) c.removeAttribute(a.name); });
+    if(c.tagName==="A"){ c.setAttribute("target","_blank"); c.setAttribute("rel","noopener"); }
+  });
+}
+function sanitizeHTML(html){ const doc=new DOMParser().parseFromString("<div>"+(html||"")+"</div>","text/html"); const r=doc.body.firstChild; cleanNode(r); return r.innerHTML; }
+const plain=h=>{ const d=document.createElement("div"); d.innerHTML=sanitizeHTML(h); return d.textContent||""; };
+function getNote(){ return S.notes.find(n=>n.id===curNote); }
+function newNote(tpl,extra){
+  const t=T(); const n=Object.assign({id:uid("n"),title:"",html:t.tplBody[tpl]||t.tplBody.blank,tag:"",pin:false,created:Date.now(),upd:Date.now()},extra||{});
+  S.notes.unshift(n); curNote=n.id; cur="notes"; try{LS.setItem("mba_tab","notes");}catch(e){}
+  save(); const ti=document.getElementById("nTitle"); if(ti&&!n.title) ti.focus();
+}
+function openNote(id){ flushNote(); curNote=id; render(); }
+function delNote(){ if(!confirm(T().nDelQ)) return; S.notes=S.notes.filter(n=>n.id!==curNote); curNote=null; save(); }
+function noteForSession(sid){
+  const x=byId(S.sessions,sid); if(!x) return;
+  const ex=S.notes.find(n=>n.sess===sid); if(ex){ curNote=ex.id; go("notes"); return; }
+  newNote("class",{title:`${x.dt} ${x.t||""}`.trim(),tag:x.mod||"",sess:sid});
+}
+function noteSet(k,v){ const n=getNote(); if(!n) return; n[k]=v; n.upd=Date.now(); saveQuiet(); renderNoteList(); }
+function flushNote(){ clearTimeout(noteTimer); const ed=document.getElementById("ned"), n=getNote(); if(ed&&n&&n.html!==ed.innerHTML){ n.html=ed.innerHTML; n.upd=Date.now(); saveQuiet(); } }
+function schedNote(){ clearTimeout(noteTimer); noteTimer=setTimeout(()=>{ flushNote(); renderNoteList(); },500); }
+function renderNoteList(){
+  const box=document.getElementById("noteList"); if(!box) return;
+  const t=T(), q=noteQ.toLowerCase();
+  const list=S.notes.filter(n=>(noteF==="*"||(noteF===""?!n.tag:n.tag===noteF))&&(!q||(n.title||"").toLowerCase().includes(q)||plain(n.html).toLowerCase().includes(q)))
+    .sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.upd||0)-(a.upd||0));
+  box.innerHTML=list.length?list.map(n=>`<div class="nitem ${n.id===curNote?'on':''}" onclick="openNote('${n.id}')">
+    <div style="font-weight:600;font-size:.88rem">${n.pin?"📌 ":""}${esc(n.title||t.nUntitled)}</div>
+    <div class="sub">${n.tag?esc(n.tag)+" · ":""}${new Date(n.upd||n.created).toLocaleDateString(LANG==="id"?"id-ID":LANG==="en"?"en-GB":"ja-JP")}</div></div>`).join("")
+    :`<div class="sub" style="padding:8px">${t.nEmpty}</div>`;
+}
+function vNotes(){
+  const t=T(), n=getNote();
+  const tagOpts=sel=>`<option value="" ${!sel?"selected":""}>${t.nNoTag}</option>`+S.modules.map(m=>`<option ${m.t===sel?"selected":""}>${esc(m.t)}</option>`).join("");
+  setTimeout(renderNoteList,0);
+  return `
+  <div class="notes-wrap">
+    <div class="card notes-side">
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <select id="tplSel" style="flex:1">${Object.entries(t.tpl).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
+        <button class="btn small" onclick="newNote(document.getElementById('tplSel').value)">${t.nNew}</button></div>
+      <input value="${esc(noteQ)}" placeholder="🔍 ${t.nSearch}" oninput="noteQ=this.value;renderNoteList()" style="margin-bottom:6px">
+      <select onchange="noteF=this.value;renderNoteList()" style="margin-bottom:8px">
+        <option value="*" ${noteF==="*"?"selected":""}>${t.nAll}</option>
+        <option value="" ${noteF===""?"selected":""}>${t.nNoTag}</option>
+        ${S.modules.map(m=>`<option ${noteF===m.t?"selected":""}>${esc(m.t)}</option>`).join("")}</select>
+      <div id="noteList" class="note-list"></div>
+    </div>
+    <div class="card notes-main">
+    ${n?`
+      <input id="nTitle" class="ntitle" value="${esc(n.title)}" placeholder="${t.nTitlePh}" oninput="noteSet('title',this.value)">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0 10px">
+        <span class="sub">${t.nTag}</span>
+        <select style="width:auto;max-width:240px" onchange="noteSet('tag',this.value)">${tagOpts(n.tag)}</select>
+        <button class="btn gray small" onclick="noteSet('pin',!getNote().pin);render()">${n.pin?t.nUnpin:t.nPin}</button>
+        <button class="btn gray small" onclick="delNote()">${t.nDel}</button>
+        <span class="sub" style="margin-left:auto">${t.nUpd} ${new Date(n.upd||n.created).toLocaleString(LANG==="id"?"id-ID":LANG==="en"?"en-GB":"ja-JP")}</span></div>
+      <div class="ntool">
+        ${[["h1","H1"],["h2","H2"],["h3","H3"],["ul","• "],["ol","1."],["todo","☑"],["quote","❝"],["bold","<b>B</b>"],["italic","<i>I</i>"],["hr","—"]]
+          .map(([k,l])=>`<button onmousedown="event.preventDefault();noteCmd('${k}')">${l}</button>`).join("")}</div>
+      <div id="ned" class="ned" contenteditable="true" spellcheck="false">${sanitizeHTML(n.html)||"<p><br></p>"}</div>
+      <div class="small-note" style="margin-top:10px">${t.nHint}</div>`
+    :`<div class="sub" style="padding:30px 0;text-align:center">${t.nPick}</div>`}
+    </div>
+  </div>`;
+}
+function edBlock(ed,node){ let b=node; while(b&&b!==ed&&!(b.nodeType===1&&/^(P|DIV|LI|H1|H2|H3|BLOCKQUOTE|PRE)$/.test(b.tagName))) b=b.parentNode; return b; }
+function markTodo(){ const s=window.getSelection(); if(!s.rangeCount) return; let n=s.getRangeAt(0).startContainer;
+  while(n&&!(n.nodeType===1&&n.tagName==="UL")) n=n.parentNode;
+  if(n){ n.classList.add("todo"); n.querySelectorAll(":scope>li").forEach(li=>{ if(!li.dataset.done) li.dataset.done="0"; }); } }
+function noteCmd(k){
+  const ed=document.getElementById("ned"); if(!ed) return; ed.focus();
+  const fb=tag=>document.execCommand("formatBlock",false,tag);
+  if(/^h[123]$/.test(k)) fb(k); else if(k==="quote") fb("blockquote");
+  else if(k==="ul") document.execCommand("insertUnorderedList"); else if(k==="ol") document.execCommand("insertOrderedList");
+  else if(k==="todo"){ document.execCommand("insertUnorderedList"); markTodo(); }
+  else if(k==="bold"||k==="italic") document.execCommand(k); else if(k==="hr") document.execCommand("insertHorizontalRule");
+  schedNote();
+}
+function initEditor(){
+  const ed=document.getElementById("ned"); if(!ed) return;
+  try{ document.execCommand("defaultParagraphSeparator",false,"p"); }catch(e){}
+  // Pintasan markdown dideteksi dari event input (bukan keydown) supaya jalan juga di keyboard HP/IME
+  ed.addEventListener("input",e=>{ if(e.inputType==="insertText"&&e.data&&/[  　]$/.test(e.data)) mdShortcut(ed); schedNote(); });
+  ed.addEventListener("blur",flushNote);
+  ed.addEventListener("paste",e=>{ e.preventDefault(); const txt=(e.clipboardData||window.clipboardData).getData("text/plain"); document.execCommand("insertText",false,txt); });
+  ed.addEventListener("mousedown",e=>{ const li=e.target.closest&&e.target.closest("ul.todo>li"); if(!li) return;
+    if(e.clientX-li.getBoundingClientRect().left<24){ e.preventDefault(); li.dataset.done=li.dataset.done==="1"?"0":"1"; schedNote(); } });
+  ed.addEventListener("keydown",e=>{
+    const sel=window.getSelection(); if(!sel.rangeCount) return; const r=sel.getRangeAt(0);
+    if(e.key==="Enter"&&!e.shiftKey){
+      // Enter di poin kosong = keluar dari daftar (seperti Notion)
+      let li=r.startContainer; while(li&&li!==ed&&!(li.nodeType===1&&li.tagName==="LI")) li=li.parentNode;
+      if(li&&li!==ed&&!li.textContent.trim()){ e.preventDefault(); document.execCommand(li.parentNode.tagName==="OL"?"insertOrderedList":"insertUnorderedList"); document.execCommand("formatBlock",false,"p"); schedNote(); return; }
+      setTimeout(()=>{ const s2=window.getSelection(); if(!s2.rangeCount) return; let n=s2.getRangeAt(0).startContainer;
+        while(n&&n!==ed&&!(n.nodeType===1&&n.tagName==="LI")) n=n.parentNode;
+        if(n&&n!==ed&&n.parentNode&&n.parentNode.classList.contains("todo")&&!n.textContent.trim()) n.dataset.done="0"; },0); return; }
+  });
+}
+const MD_MAP={"#":"h1","##":"h2","###":"h3","-":"ul","*":"ul","・":"ul","1.":"ol","1)":"ol","[]":"todo","[ ]":"todo","「」":"todo",">":"quote","＞":"quote","＃":"h1","＃＃":"h2"};
+function mdShortcut(ed){
+  const sel=window.getSelection(); if(!sel.rangeCount) return; const r=sel.getRangeAt(0);
+  if(!r.collapsed||r.startContainer.nodeType!==3) return;
+  const blk=edBlock(ed,r.startContainer); if(!blk||blk===ed) return;
+  const pre=document.createRange(); pre.setStart(blk,0); pre.setEnd(r.startContainer,r.startOffset);
+  const typed=pre.toString(); const mk=typed.replace(/[  　]$/,"");
+  const act=MD_MAP[mk]; if(!act) return;
+  const inLi=blk.tagName==="LI"; if(inLi&&act!=="todo") return;
+  // hapus penanda (mis. "## ") dari awal blok
+  const del=document.createRange(); del.setStart(blk,0); del.setEnd(r.startContainer,r.startOffset); del.deleteContents();
+  if(!blk.textContent) blk.innerHTML="<br>";
+  const rr=document.createRange(); rr.setStart(blk,0); rr.collapse(true); sel.removeAllRanges(); sel.addRange(rr);
+  // ditunda satu tick: execCommand di dalam event input (reentrant) diabaikan browser
+  setTimeout(()=>{ if(act==="todo"&&inLi){ markTodo(); schedNote(); } else noteCmd(act); },0);
+}
+
+/* ================= GOOGLE CALENDAR ================= */
+const ymd=ds=>ds.replace(/-/g,"");
+function sessItem(x){ const st=S.settings, timed=!x.nc&&st.clsStart&&st.clsEnd;
+  return {key:"s:"+x.id,title:"🎓 MBA: "+(x.t||x.mod||"授業")+(x.t&&x.mod?" — "+x.mod:""),date:x.dt,start:timed?st.clsStart:"",end:timed?st.clsEnd:"",desc:"UWTSD MBA"+(x.mod?" · "+x.mod:"")}; }
+function calItems(){
+  const out=[];
+  S.sessions.forEach(x=>{ if(x.dt) out.push(sessItem(x)); });
+  S.assignments.forEach(x=>{ if(x.due&&!DONE_ASG.includes(x.s)) out.push({key:"a:"+x.id,title:"📝 MBA 締切: "+x.t,date:x.due,desc:x.mod||""}); });
+  S.milestones.forEach(x=>{ if(x.due&&!x.d) out.push({key:"m:"+x.id,title:"🗓 MBA: "+x.t,date:x.due,desc:""}); });
+  S.thesisPlan.forEach(x=>{ if(x.due&&!x.d) out.push({key:"t:"+x.id,title:"🎓 論文: "+x.t,date:x.due,desc:""}); });
+  return out;
+}
+function gcalLink(it){
+  if(!it||!it.date) return "#";
+  const dates=it.start?`${ymd(it.date)}T${it.start.replace(":","")}00/${ymd(it.date)}T${it.end.replace(":","")}00`:`${ymd(it.date)}/${ymd(addDays(it.date,1))}`;
+  const p=new URLSearchParams({action:"TEMPLATE",text:it.title,dates,details:it.desc||"",ctz:"Asia/Tokyo"});
+  if(S.settings.calEmail) p.set("authuser",S.settings.calEmail);
+  return "https://calendar.google.com/calendar/render?"+p.toString();
+}
+function downloadICS(){
+  const e=s=>String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
+  const stamp=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z");
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//MBA UWTSD//System//ID","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:MBA UWTSD","X-WR-TIMEZONE:Asia/Tokyo",
+    "BEGIN:VTIMEZONE","TZID:Asia/Tokyo","BEGIN:STANDARD","DTSTART:19700101T000000","TZOFFSETFROM:+0900","TZOFFSETTO:+0900","TZNAME:JST","END:STANDARD","END:VTIMEZONE"];
+  calItems().forEach(it=>{
+    L.push("BEGIN:VEVENT","UID:"+it.key.replace(":","-")+"@mba-uwtsd","DTSTAMP:"+stamp,"SUMMARY:"+e(it.title));
+    if(it.desc) L.push("DESCRIPTION:"+e(it.desc));
+    if(it.start) L.push(`DTSTART;TZID=Asia/Tokyo:${ymd(it.date)}T${it.start.replace(":","")}00`,`DTEND;TZID=Asia/Tokyo:${ymd(it.date)}T${it.end.replace(":","")}00`);
+    else L.push("DTSTART;VALUE=DATE:"+ymd(it.date),"DTEND;VALUE=DATE:"+ymd(addDays(it.date,1)));
+    L.push("END:VEVENT");
+  });
+  L.push("END:VCALENDAR");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([L.join("\r\n")+"\r\n"],{type:"text/calendar"}));
+  a.download="mba-uwtsd.ics"; a.click();
+}
+let gisPromise=null;
+function loadGIS(){
+  if(window.google&&google.accounts&&google.accounts.oauth2) return Promise.resolve();
+  if(gisPromise) return gisPromise;
+  gisPromise=new Promise((res,rej)=>{ const s=document.createElement("script"); s.src="https://accounts.google.com/gsi/client"; s.async=true;
+    s.onload=()=>res(); s.onerror=()=>{ gisPromise=null; rej(new Error("Google Identity Services")); }; document.head.appendChild(s); });
+  return gisPromise;
+}
+function getToken(scope){
+  return new Promise((res,rej)=>{
+    const tc=google.accounts.oauth2.initTokenClient({client_id:S.settings.gcalClientId,scope,hint:S.settings.calEmail||undefined,
+      callback:r=>r&&r.access_token?res(r.access_token):rej(new Error((r&&(r.error_description||r.error))||"no token")),
+      error_callback:er=>rej(new Error((er&&(er.message||er.type))||"popup"))});
+    tc.requestAccessToken({prompt:""});
+  });
+}
+function toGEvent(it){
+  return {summary:it.title,description:it.desc||"",status:"confirmed",
+    start:it.start?{dateTime:`${it.date}T${it.start}:00`,timeZone:"Asia/Tokyo"}:{date:it.date},
+    end:it.start?{dateTime:`${it.date}T${it.end}:00`,timeZone:"Asia/Tokyo"}:{date:addDays(it.date,1)}};
+}
+async function gcalSync(){
+  const t=T(), msg=document.getElementById("calMsg"), st=S.settings;
+  const cid=(document.getElementById("gcid")||{}).value; if(cid!==undefined) st.gcalClientId=cid.trim();
+  if(!/^https?:$/.test(location.protocol)){ msg.textContent=t.calOrigin; return; }
+  if(!st.gcalClientId){ msg.textContent=t.calNeedId; return; }
+  msg.textContent=t.calSyncing;
+  const map=S.gcalMap||(S.gcalMap={});
+  try{
+    await loadGIS();
+    let token;
+    try{ token=await getToken("https://www.googleapis.com/auth/calendar.app.created"); }
+    catch(e){ if(/scope/i.test(e.message)) token=await getToken("https://www.googleapis.com/auth/calendar"); else throw e; }
+    const api=async(m,path,body)=>{
+      const r=await fetch("https://www.googleapis.com/calendar/v3"+path,{method:m,headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+      if(r.status===204) return {};
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){ const er=new Error((j.error&&j.error.message)||("HTTP "+r.status)); er.status=r.status; throw er; }
+      return j;
+    };
+    let calId=st.gcalCalId;
+    if(calId){ try{ await api("GET","/calendars/"+encodeURIComponent(calId)); }catch(e){ if(e.status===404||e.status===403||e.status===410) calId=""; else throw e; } }
+    if(!calId){ const c=await api("POST","/calendars",{summary:"MBA UWTSD",timeZone:"Asia/Tokyo"}); calId=c.id; st.gcalCalId=calId; for(const k in map) delete map[k]; saveQuiet(); }
+    const base="/calendars/"+encodeURIComponent(calId)+"/events";
+    let a=0,u=0,d=0; const seen={};
+    for(const it of calItems()){
+      seen[it.key]=1; const body=toGEvent(it), eid=map[it.key];
+      if(eid){ try{ await api("PUT",base+"/"+encodeURIComponent(eid),body); u++; continue; }catch(e){ if(e.status!==404&&e.status!==410) throw e; } }
+      const ev=await api("POST",base,body); map[it.key]=ev.id; a++; saveQuiet();
+    }
+    for(const k of Object.keys(map)){ if(seen[k]) continue;
+      try{ await api("DELETE",base+"/"+encodeURIComponent(map[k])); }catch(e){ if(e.status!==404&&e.status!==410) throw e; }
+      delete map[k]; d++; }
+    saveQuiet(); msg.textContent=t.calDone(a,u,d);
+  }catch(e){ saveQuiet(); msg.textContent=t.calErr+" "+e.message; }
+}
+
+
 render();
 </script>
 </body>
 </html>
-
