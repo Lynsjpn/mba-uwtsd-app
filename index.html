@@ -968,12 +968,14 @@ function vKuliah(){
   const sess=S.sessions.filter(x=>x.sem===semSel).sort((p,q)=>(p.dt||"")<(q.dt||"")?-1:1);
   const asg=S.assignments.slice().sort((p,q)=>{ const dp=DONE_ASG.includes(p.s),dq=DONE_ASG.includes(q.s);
     if(dp!==dq) return dp?1:-1; return (p.due||"9999")<(q.due||"9999")?-1:1; });
+  const noData=!S.sessions.length&&!S.books.length;
   const tgt=Number(S.settings.weeklyTarget||20);
   const weeks=[]; for(let i=7;i>=0;i--){ const ws=addDays(weekStart(td),-7*i); weeks.push({ws,h:hoursWeek(ws)}); }
   const mx=Math.max(tgt,...weeks.map(w=>w.h),1);
   const totJam=S.studyLog.reduce((s,l)=>s+Number(l.h||0),0);
   const st=S.settings;
   return `
+  ${noData?emptyData():""}
   <div class="alert">${t.learnAlert}</div>
 
   <div class="card"><h2>${t.semTitle}</h2>
@@ -1524,6 +1526,7 @@ function vBooks(){
   const rows=S.books.slice().sort((a,b)=>(a.req===b.req?0:a.req==="必須"?-1:1)||String(a.mod).localeCompare(String(b.mod)));
   const folder=S.settings.ebookDir||"";
   return `
+  ${S.books.length?"":emptyData()}
   <div class="card"><h2>${t.bkTitle}</h2><div class="sub">${t.bkIntro}</div>
     <div class="sub" style="margin-top:8px"><b>${t.bkStat(got,req.length)}</b></div>
     <div class="bar" style="margin-top:6px"><div style="width:${req.length?100*got/req.length:0}%"></div></div></div>
@@ -1613,11 +1616,11 @@ async function trRun(){
 
 /* ================= Pemberitahuan versi ================= */
 /* APP_VERSION diganti otomatis oleh build-public.ps1 pada setiap rilis; "dev" = file lokal. */
-const APP_VERSION="2026.09.20-1233";
+const APP_VERSION="2026.09.20-1238";
 const APP_NOTES={
- id:"Tampilan lebih ringkas: baris keterangan di header dihapus, dan semua kotak peringatan kini tampil satu baris — klik untuk membuka isinya.",
- en:"A tidier layout: the header tagline is gone and every alert box now shows a single line — click it to expand.",
- ja:"表示を簡潔に：ヘッダーの説明文を削除し、各お知らせは1行表示（クリックで開く）になりました。"
+ id:"Kalau tab Silabus / Kuliah / 教材 terlihat kosong, sekarang muncul penjelasan dan tombol untuk langsung memuat file data dari Google Drive (cukup sekali per perangkat).",
+ en:"When the Syllabus / Coursework / Textbooks tabs look empty, the page now explains why and gives a button to load your data file from Google Drive (once per device).",
+ ja:"シラバス・授業・教材タブが空のときに、理由の説明と、Googleドライブのデータファイルをその場で読み込むボタンを表示するようにしました（端末ごとに一度だけ）。"
 };
 const I18N_V={
  id:{verUpd:v=>`🆕 Sistem diperbarui ke versi ${v}`,verNew:v=>`🔄 Versi baru tersedia (${v}).`,verReload:"Muat ulang",verOk:"OK",verCur:v=>`versi ${v}`},
@@ -1692,6 +1695,9 @@ id:{
  syNext:"BERIKUTNYA",syPast:"selesai",
  bkUsed:"Dipakai di",bkSoon:d=>`⚠️ dibutuhkan ${d} hari lagi`,bkToday:"⚠️ dibutuhkan hari ini",
  trOpen:"🤖 Buka asisten terjemahan",trClose:"Tutup",
+ emT:"📥 Data belum dimuat di perangkat ini",
+ emB:"Isi silabus, jadwal kelas, dan daftar 教材 disimpan di file datamu sendiri (tidak ditaruh di internet). Tekan tombol di bawah, lalu pilih <b>mba-uwtsd-data.json</b> dari Google Drive → folder <b>MBA_UWTSD</b>. Cukup sekali per perangkat — setelah itu tersimpan di browser ini.",
+ emBtn:"📥 Buka file data sekarang",
  alPrep:(n,d)=>`📘 Persiapan pertemuan berikutnya (${d} hari lagi): <b>${n}</b> item belum selesai — buka tab Silabus.`
 },
 en:{
@@ -1708,6 +1714,9 @@ en:{
  syNext:"NEXT",syPast:"done",
  bkUsed:"Used in",bkSoon:d=>`⚠️ needed in ${d} days`,bkToday:"⚠️ needed today",
  trOpen:"🤖 Open the translation assistant",trClose:"Close",
+ emT:"📥 Your data has not been loaded on this device",
+ emB:"The syllabus, class schedule and textbook list live in your own data file (they are not put on the internet). Press the button below and pick <b>mba-uwtsd-data.json</b> from Google Drive → folder <b>MBA_UWTSD</b>. Once per device is enough — after that it stays in this browser.",
+ emBtn:"📥 Load the data file now",
  alPrep:(n,d)=>`📘 Preparation for the next class (in ${d} days): <b>${n}</b> item(s) left — open the Syllabus tab.`
 },
 ja:{
@@ -1724,6 +1733,9 @@ ja:{
  syNext:"次回",syPast:"終了",
  bkUsed:"使用する回",bkSoon:d=>`⚠️ あと${d}日で必要`,bkToday:"⚠️ 本日必要",
  trOpen:"🤖 翻訳アシスタントを開く",trClose:"閉じる",
+ emT:"📥 この端末にはデータが読み込まれていません",
+ emB:"シラバス・授業日程・教材リストはご自身のデータファイルに保存されています（インターネット上には置いていません）。下のボタンを押し、Google ドライブの <b>MBA_UWTSD</b> フォルダから <b>mba-uwtsd-data.json</b> を選んでください。端末ごとに一度だけで、以降はこのブラウザに保存されます。",
+ emBtn:"📥 データファイルを読み込む",
  alPrep:(n,d)=>`📘 次回（${d}日後）の準備：未完了が <b>${n}</b> 件あります — シラバスタブで確認。`
 }};
 for(const l in I18N_S) Object.assign(I18N[l],I18N_S[l]);
@@ -1765,10 +1777,18 @@ function trFromSess(id){
 }
 function sessNo(x){ const m=String(x.t||"").match(/[①-⑮]|第\s*\d+\s*回/); return m?m[0]:""; }
 
+/* Ditampilkan saat data pengguna belum dimuat di perangkat ini */
+function emptyData(){
+  const t=T();
+  return `<div class="card" style="text-align:center">
+    <h2>${t.emT}</h2>
+    <div class="sub" style="max-width:620px;margin:6px auto 12px">${t.emB}</div>
+    <button class="btn green" onclick="document.getElementById('imp').click()">${t.emBtn}</button></div>`;
+}
 function vSilabus(){
   const t=T(), td=todayStr();
   const list=S.modules.filter(m=>S.courses&&S.courses[m.code]);
-  if(!list.length) return `<div class="card"><div class="sub">${t.syNo}</div></div>`;
+  if(!list.length) return emptyData();
   if(!syMod||!S.courses[syMod]) syMod=list[0].code;
   const c=S.courses[syMod];
   const sess=S.sessions.filter(x=>x.mod===syMod).sort((a,b)=>(a.dt||"")<(b.dt||"")?-1:1);
