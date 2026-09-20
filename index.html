@@ -51,6 +51,10 @@ button.btn.green{background:var(--acc2)} button.btn.gray{background:#8a93a6} but
 .alert.red{border-color:var(--bad);background:var(--alertred-bg)}
 .del{color:var(--bad);cursor:pointer;font-weight:700;padding:0 6px}
 .small-note{font-size:.72rem;color:var(--sub);margin-top:6px}
+/* mode dwibahasa: baris kedua dipisah dengan \n */
+h1,h2,th,td,.sub,.alert,.small-note,.chip,nav button,label,summary,button.btn,footer,header p{white-space:pre-line}
+nav button{line-height:1.3}
+.chip{white-space:pre-line;text-align:center}
 footer{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding:8px 16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 a{color:var(--accT)}
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -460,8 +464,41 @@ ja:{
 }};
 for(const l in I18N_K) Object.assign(I18N[l],I18N_K[l]);
 
-let LANG=LS.getItem("mba_lang")||"id";
-const T=()=>I18N[LANG];
+/* ===== Tampilan dwibahasa: tiap label ditampilkan dalam dua bahasa sekaligus ===== */
+const PAIRS={"ja-en":["ja","en"],"id-en":["id","en"]};
+const LANG_LABEL={"ja-en":"日本語 / EN","id-en":"Indonesia / EN"};
+let LANG=(()=>{ const v=LS.getItem("mba_lang")||"id-en";
+  return PAIRS[v]?v:(v==="ja"?"ja-en":"id-en"); })();
+const P=()=>(PAIRS[LANG]||["id"])[0];            // bahasa utama (untuk data & format tanggal)
+const SEC=()=>(PAIRS[LANG]||[null,null])[1];     // bahasa kedua
+const LOCALE={id:"id-ID",en:"en-GB",ja:"ja-JP"};
+/* Gabungkan dua teks. Pendek → "A ／ B". Panjang → dua baris. Awalan yang sama (emoji) tidak diulang. */
+function mergeStr(a,b){
+  a=String(a==null?"":a); b=String(b==null?"":b);
+  if(!b||a===b) return a;
+  const ta=a.split(" ")[0], tb=b.split(" ")[0];
+  if(ta===tb&&ta.length<=4&&!/^[A-Za-z0-9]+$/.test(ta)) b=b.slice(tb.length).trim();
+  if(!b||a===b) return a;
+  // teks biasa (bukan HTML) supaya aman dipakai di <option>, placeholder, title, alert, dan textContent.
+  // Baris kedua muncul karena wadahnya memakai white-space:pre-line.
+  return (a.length+b.length<=70) ? a+" ／ "+b : a+"\n"+b;
+}
+function mergeI18N(a,b){
+  const o={};
+  for(const k in a){
+    const va=a[k], vb=b?b[k]:undefined;
+    if(k==="tplBody"||vb===undefined||va===undefined){ o[k]=va; continue; }
+    if(typeof va==="function") o[k]=(...x)=>mergeStr(va(...x),typeof vb==="function"?vb(...x):"");
+    else if(Array.isArray(va)) o[k]=va.map((x,i)=>mergeStr(x,Array.isArray(vb)?vb[i]:""));
+    else if(va&&typeof va==="object") o[k]=mergeI18N(va,vb);
+    else o[k]=mergeStr(va,vb);
+  }
+  return o;
+}
+const _tCache={};
+const T=()=>{ if(_tCache[LANG]) return _tCache[LANG];
+  const s=SEC(); _tCache[LANG]= s? mergeI18N(I18N[P()],I18N[s]) : I18N[P()];
+  return _tCache[LANG]; };
 
 /* ============================================================
    BLOK DATA VERSI PUBLIK — tidak memuat data pribadi apa pun.
@@ -670,7 +707,7 @@ function load(){
 S = load();
 function saveQuiet(){ try{ LS.setItem(KEY,JSON.stringify(S)); }catch(e){ alert("Penyimpanan browser penuh / diblokir: "+e.message); } }
 function save(){ saveQuiet(); render(); }
-function setLang(l){ LANG=l; LS.setItem("mba_lang",l); document.documentElement.lang=l; render(); }
+function setLang(l){ LANG=l; LS.setItem("mba_lang",l); document.documentElement.lang=P(); render(); }
 function exportJSON(){
   const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
@@ -703,7 +740,7 @@ function todayStr(){ return localStr(new Date()); }
 function addDays(ds,n){ const d=new Date(ds+"T00:00:00"); d.setDate(d.getDate()+n); return localStr(d); }
 function weekStart(ds){ const d=new Date(ds+"T00:00:00"); d.setDate(d.getDate()-((d.getDay()+6)%7)); return localStr(d); }
 const WD={id:["Min","Sen","Sel","Rab","Kam","Jum","Sab"],en:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],ja:["日","月","火","水","木","金","土"]};
-function wday(ds){ return ds?WD[LANG][new Date(ds+"T00:00:00").getDay()]:""; }
+function wday(ds){ return ds?WD[P()][new Date(ds+"T00:00:00").getDay()]:""; }
 function curSem(){ return semOf(todayStr(),S); }
 const fmtH=h=>(Math.round(h*10)/10).toString();
 const DONE_ASG=["Terkirim","Dinilai"];
@@ -726,17 +763,18 @@ let cur=LS.getItem("mba_tab")||"dash";
 function go(id){ cur=id; try{LS.setItem("mba_tab",id);}catch(e){} render(); window.scrollTo(0,0); }
 function render(){
   const t=T();
-  document.getElementById("hTitle").textContent=t.title;
-  document.getElementById("hTag").textContent=t.tag;
-  document.getElementById("btnExp").textContent=t.exp;
-  document.getElementById("btnImp").textContent=t.imp;
-  document.getElementById("bkNote").textContent=t.bkNote;
-  document.getElementById("langs").innerHTML=["id","en","ja"].map(l=>`<button class="${LANG===l?'on':''}" onclick="setLang('${l}')">${{id:"ID",en:"EN",ja:"日本語"}[l]}</button>`).join("");
+  document.getElementById("hTitle").innerHTML=t.title;
+  document.getElementById("hTag").innerHTML=t.tag;
+  document.getElementById("btnExp").innerHTML=t.exp;
+  document.getElementById("btnImp").innerHTML=t.imp;
+  document.getElementById("bkNote").innerHTML=t.bkNote;
+  document.getElementById("langs").innerHTML=Object.keys(PAIRS).map(l=>`<button class="${LANG===l?'on':''}" onclick="setLang('${l}')">${LANG_LABEL[l]}</button>`).join("");
   const V={dash:vDash,kuliah:vKuliah,notes:vNotes,books:vBooks,tesis:vTesis,dana:vDana,draf:vDraf,daftar:vDaftar,me:vMe};
   if(!V[cur]) cur="dash";
   document.getElementById("nav").innerHTML=Object.entries(t.tabs).map(([id,l])=>`<button class="${cur===id?'active':''}" onclick="go('${id}')">${l}</button>`).join("");
   document.getElementById("main").innerHTML=V[cur]();
   if(cur==="notes") initEditor();
+  if(typeof verTagUpdate==="function") verTagUpdate();
   if(cur==="kuliah"&&S.settings.gcalClientId&&/^https?:$/.test(location.protocol)) loadGIS().catch(()=>{});
 }
 
@@ -1054,9 +1092,9 @@ function vDraf(){
   <div class="card">
     <h2>${esc(d.name)}</h2>
     <table>
-      <tr><th style="width:110px">${t.drafStatus}</th><td>${d.status[LANG]}</td></tr>
+      <tr><th style="width:110px">${t.drafStatus}</th><td>${mergeStr(d.status[P()],SEC()?d.status[SEC()]:"")}</td></tr>
       <tr><th>${t.drafSrc}</th><td><code style="font-size:.78rem">${esc(d.src)}</code></td></tr>
-      <tr><th>${t.drafNote}</th><td>${d.note[LANG]}</td></tr>
+      <tr><th>${t.drafNote}</th><td>${mergeStr(d.note[P()],SEC()?d.note[SEC()]:"")}</td></tr>
       <tr><th>${t.drafChars}</th><td><b style="color:${overAll?'var(--bad)':'var(--acc2)'}">${total.toLocaleString()}</b> ${t.drafChars}
         ${d.limit?` / ${t.drafLimit} ${d.minLimit?d.minLimit.toLocaleString()+"〜":""}${d.limit.toLocaleString()} — ${overAll?t.drafOver:t.drafOk}`:""}</td></tr>
     </table>
@@ -1147,7 +1185,7 @@ function renderNoteList(){
     .sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.upd||0)-(a.upd||0));
   box.innerHTML=list.length?list.map(n=>`<div class="nitem ${n.id===curNote?'on':''}" onclick="openNote('${n.id}')">
     <div style="font-weight:600;font-size:.88rem">${n.pin?"📌 ":""}${esc(n.title||t.nUntitled)}</div>
-    <div class="sub">${n.tag?esc(n.tag)+" · ":""}${new Date(n.upd||n.created).toLocaleDateString(LANG==="id"?"id-ID":LANG==="en"?"en-GB":"ja-JP")}</div></div>`).join("")
+    <div class="sub">${n.tag?esc(n.tag)+" · ":""}${new Date(n.upd||n.created).toLocaleDateString(LOCALE[P()]||"en-GB")}</div></div>`).join("")
     :`<div class="sub" style="padding:8px">${t.nEmpty}</div>`;
 }
 function vNotes(){
@@ -1175,7 +1213,7 @@ function vNotes(){
         <select style="width:auto;max-width:240px" onchange="noteSet('tag',this.value)">${tagOpts(n.tag)}</select>
         <button class="btn gray small" onclick="noteSet('pin',!getNote().pin);render()">${n.pin?t.nUnpin:t.nPin}</button>
         <button class="btn gray small" onclick="delNote()">${t.nDel}</button>
-        <span class="sub" style="margin-left:auto">${t.nUpd} ${new Date(n.upd||n.created).toLocaleString(LANG==="id"?"id-ID":LANG==="en"?"en-GB":"ja-JP")}</span></div>
+        <span class="sub" style="margin-left:auto">${t.nUpd} ${new Date(n.upd||n.created).toLocaleString(LOCALE[P()]||"en-GB")}</span></div>
       <div class="ntool">
         ${[["h1","H1"],["h2","H2"],["h3","H3"],["ul","• "],["ol","1."],["todo","☑"],["quote","❝"],["bold","<b>B</b>"],["italic","<i>I</i>"],["hr","—"]]
           .map(([k,l])=>`<button onmousedown="event.preventDefault();noteCmd('${k}')">${l}</button>`).join("")}</div>
@@ -1540,7 +1578,72 @@ async function trRun(){
   }catch(e){ out.textContent=t.trErr+" "+e.message; }
 }
 
+/* ================= Pemberitahuan versi ================= */
+/* APP_VERSION diganti otomatis oleh build-public.ps1 pada setiap rilis; "dev" = file lokal. */
+const APP_VERSION="2026.09.20-1200";
+const APP_NOTES={
+ id:"Tampilan dua bahasa sekaligus (pilih 日本語/EN atau Indonesia/EN) + pemberitahuan otomatis kalau ada versi baru. Sebelumnya: jadwal & silabus 秋学期 2026 (31 sesi), 7 tugas berikut deadline Turnitin, tab 📕 教材, dan asisten terjemahan AI.",
+ en:"Side-by-side bilingual interface (choose 日本語/EN or Indonesia/EN) plus an automatic notice when a new version is published. Earlier: autumn 2026 schedule & syllabus (31 sessions), 7 assignments with Turnitin deadlines, the 📕 Textbooks tab, and the AI translation helper.",
+ ja:"二言語同時表示（日本語/EN または Indonesia/EN を選択）と、新しいバージョン公開時の自動通知を追加。直前の更新：秋学期2026の日程・シラバス（全31回）、Turnitin締切つき課題7件、📕教材タブ、AI翻訳アシスタント。"
+};
+const I18N_V={
+ id:{verUpd:v=>`🆕 Sistem diperbarui ke versi ${v}`,verNew:v=>`🔄 Versi baru tersedia (${v}).`,verReload:"Muat ulang",verOk:"OK",verCur:v=>`versi ${v}`},
+ en:{verUpd:v=>`🆕 Updated to version ${v}`,verNew:v=>`🔄 A new version is available (${v}).`,verReload:"Reload",verOk:"OK",verCur:v=>`version ${v}`},
+ ja:{verUpd:v=>`🆕 バージョン ${v} に更新されました`,verNew:v=>`🔄 新しいバージョン（${v}）があります。`,verReload:"再読み込み",verOk:"OK",verCur:v=>`バージョン ${v}`}
+};
+for(const l in I18N_V) Object.assign(I18N[l],I18N_V[l]);
+
+function verTagUpdate(){
+  const foot=document.querySelector("footer"); if(!foot) return;
+  let s=document.getElementById("verTag");
+  if(!s){ s=document.createElement("div"); s.id="verTag"; s.className="small-note";
+    s.style.cssText="width:100%;text-align:center;margin-top:2px"; foot.appendChild(s); }
+  s.textContent=T().verCur(APP_VERSION);
+}
+function verBar(html){
+  let el=document.getElementById("verBar");
+  if(!el){ el=document.createElement("div"); el.id="verBar"; document.getElementById("main").before(el); }
+  el.innerHTML=html;
+}
+function verDismiss(){ try{ LS.setItem("mba_seen_ver",APP_VERSION); }catch(e){}
+  const el=document.getElementById("verBar"); if(el) el.remove(); }
+/* 1) Sudah dimuat ulang dan versinya berubah → tampilkan apa yang baru (sekali saja) */
+function verShowChangelog(){
+  if(APP_VERSION==="dev") return;
+  let seen=null; try{ seen=LS.getItem("mba_seen_ver"); }catch(e){}
+  if(seen===APP_VERSION) return;
+  const t=T(), notes=mergeStr(APP_NOTES[P()]||"",SEC()?(APP_NOTES[SEC()]||""):"");
+  verBar(`<div class="alert" style="border-color:var(--acc2);margin:12px 16px 0">
+    <b>${t.verUpd(APP_VERSION)}</b><br>${esc(notes)}
+    <div style="margin-top:8px"><button class="btn small green" onclick="verDismiss()">${t.verOk}</button></div></div>`);
+  if(!seen){ verDismiss(); }   // pemakaian pertama: cukup catat versinya, jangan ganggu
+}
+/* 2) Halaman sedang terbuka dan versi di server sudah lebih baru → minta muat ulang */
+let verTimer=null;
+async function verCheck(){
+  if(APP_VERSION==="dev"||!/^https?:$/.test(location.protocol)) return;
+  try{
+    const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok) return;
+    const j=await r.json();
+    if(j&&j.v&&j.v!==APP_VERSION){
+      const t=T();
+      verBar(`<div class="alert red" style="margin:12px 16px 0"><b>${t.verNew(j.v)}</b>
+        <div style="margin-top:8px"><button class="btn small" onclick="location.reload()">${t.verReload}</button></div></div>`);
+      clearInterval(verTimer);
+    }
+  }catch(e){}
+}
+function verInit(){
+  verShowChangelog();
+  verTagUpdate();
+  verCheck();
+  verTimer=setInterval(verCheck,10*60*1000);
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) verCheck(); });
+}
+
 render();
+verInit();
 </script>
 </body>
 </html>
