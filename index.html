@@ -49,6 +49,12 @@ button.btn.green{background:var(--acc2)} button.btn.gray{background:#8a93a6} but
 .done{text-decoration:line-through;color:var(--sub)}
 .alert{border-left:4px solid var(--warn);background:var(--alert-bg);padding:10px 12px;border-radius:8px;font-size:.85rem;margin-bottom:10px}
 .alert.red{border-color:var(--bad);background:var(--alertred-bg)}
+.alert .a-head{display:flex;gap:6px;align-items:flex-start;cursor:pointer;font-weight:600}
+.alert .a-ico{flex:0 0 auto;color:var(--sub)}
+.alert .a-sum{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alert .a-body{display:none;margin-top:8px}
+.alert.open .a-body{display:block}
+.alert.open .a-head{margin-bottom:0}
 .del{color:var(--bad);cursor:pointer;font-weight:700;padding:0 6px}
 .small-note{font-size:.72rem;color:var(--sub);margin-top:6px}
 /* mode dwibahasa: baris kedua dipisah dengan \n */
@@ -104,7 +110,7 @@ textarea{min-height:60px;resize:vertical;line-height:1.6}
 </head>
 <body>
 <header>
-  <div><h1 id="hTitle"></h1><p id="hTag"></p></div>
+  <div><h1 id="hTitle"></h1></div>
   <div class="langs" id="langs"></div>
 </header>
 <nav id="nav"></nav>
@@ -771,7 +777,7 @@ function go(id){ cur=id; try{LS.setItem("mba_tab",id);}catch(e){} render(); wind
 function render(){
   const t=T();
   document.getElementById("hTitle").innerHTML=t.title;
-  document.getElementById("hTag").innerHTML=t.tag;
+  const tagEl=document.getElementById("hTag"); if(tagEl) tagEl.innerHTML=t.tag;
   document.getElementById("btnExp").innerHTML=t.exp;
   document.getElementById("btnImp").innerHTML=t.imp;
   document.getElementById("bkNote").innerHTML=t.bkNote;
@@ -782,10 +788,27 @@ function render(){
   document.getElementById("main").innerHTML=V[cur]();
   if(cur==="notes") initEditor();
   if(typeof verTagUpdate==="function") verTagUpdate();
+  if(typeof collapseAlerts==="function") collapseAlerts();
   if(cur==="kuliah"&&S.settings.gcalClientId&&/^https?:$/.test(location.protocol)) loadGIS().catch(()=>{});
 }
 
 /* ================= VIEWS ================= */
+/* Peringatan tampil satu baris; isinya terbuka saat diklik */
+function collapseAlerts(){
+  document.querySelectorAll(".alert:not([data-c])").forEach(a=>{
+    a.dataset.c="1";
+    const txt=(a.innerText||a.textContent||"").trim();   // innerText menghormati <br>
+    if(txt.length<=90) return;                       // sudah pendek, biarkan
+    const first=(txt.split("\n")[0]||txt).slice(0,120);
+    const full=a.innerHTML;
+    a.innerHTML=`<div class="a-head"><span class="a-ico">▸</span><span class="a-sum">${esc(first)}</span></div><div class="a-body">${full}</div>`;
+    a.querySelector(".a-head").addEventListener("click",()=>{
+      a.classList.toggle("open");
+      a.querySelector(".a-ico").textContent=a.classList.contains("open")?"▾":"▸";
+      a.querySelector(".a-sum").style.whiteSpace=a.classList.contains("open")?"normal":"nowrap";
+    });
+  });
+}
 function vDash(){
   const t=T(), td=todayStr(), st=S.settings;
   const next=S.sessions.filter(x=>x.dt&&x.dt>=td).sort((a,b)=>a.dt<b.dt?-1:1)[0];
@@ -1590,11 +1613,11 @@ async function trRun(){
 
 /* ================= Pemberitahuan versi ================= */
 /* APP_VERSION diganti otomatis oleh build-public.ps1 pada setiap rilis; "dev" = file lokal. */
-const APP_VERSION="2026.09.20-1227";
+const APP_VERSION="2026.09.20-1233";
 const APP_NOTES={
- id:"Tab 📘 Silabus baru: isi silabus resmi SM & ABM, tiap pertemuan lengkap dengan tujuan, materi, kata kunci, pertanyaan diskusi, bagian buku yang harus dibaca, checklist persiapan, bank materi, tombol catatan dan terjemahan. Status ketersediaan buku otomatis terangkum di tab 📕 教材.",
- en:"New 📘 Syllabus tab: the official SM & ABM syllabi, each session with outcomes, contents, keywords, discussion questions, the exact chapters to read, a preparation checklist, a material bank, and note/translate buttons. Book availability is rolled up automatically in the 📕 Textbooks tab.",
- ja:"📘シラバスタブを追加：SM・ABMの公式シラバスを収録し、各回の到達目標・講義内容・キーワード・討論準備・読むべき章・準備チェックリスト・資料バンク・ノート／翻訳ボタンを一画面に。教材の入手状況は📕教材タブに自動集約されます。"
+ id:"Tampilan lebih ringkas: baris keterangan di header dihapus, dan semua kotak peringatan kini tampil satu baris — klik untuk membuka isinya.",
+ en:"A tidier layout: the header tagline is gone and every alert box now shows a single line — click it to expand.",
+ ja:"表示を簡潔に：ヘッダーの説明文を削除し、各お知らせは1行表示（クリックで開く）になりました。"
 };
 const I18N_V={
  id:{verUpd:v=>`🆕 Sistem diperbarui ke versi ${v}`,verNew:v=>`🔄 Versi baru tersedia (${v}).`,verReload:"Muat ulang",verOk:"OK",verCur:v=>`versi ${v}`},
@@ -1614,6 +1637,7 @@ function verBar(html){
   let el=document.getElementById("verBar");
   if(!el){ el=document.createElement("div"); el.id="verBar"; document.getElementById("main").before(el); }
   el.innerHTML=html;
+  if(typeof collapseAlerts==="function") collapseAlerts();
 }
 function verDismiss(){ try{ LS.setItem("mba_seen_ver",APP_VERSION); }catch(e){}
   const el=document.getElementById("verBar"); if(el) el.remove(); }
