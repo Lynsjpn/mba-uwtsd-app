@@ -642,7 +642,7 @@ function migrate(raw){
     s.schemaVer=5;
   }
   // kunci baru & id stabil (dipakai sinkron kalender dan tautan catatan)
-  ["semesters","sessions","assignments","notes","thesisPlan","studyLog"].forEach(k=>{ if(!Array.isArray(s[k])) s[k]=cp(SEED[k]||[]); });
+  ["semesters","sessions","assignments","notes","thesisPlan","studyLog","books"].forEach(k=>{ if(!Array.isArray(s[k])) s[k]=cp(SEED[k]||[]); });
   if(!s.thesis) s.thesis=cp(SEED.thesis);
   s.settings=Object.assign(cp(SEED.settings),s.settings||{});
   if(!s.gcalMap) s.gcalMap={};
@@ -650,7 +650,14 @@ function migrate(raw){
   s.assignments.forEach(x=>{ if(!x.id)x.id=uid("a"); });
   s.milestones.forEach(x=>{ if(!x.id)x.id=uid("m"); });
   s.thesisPlan.forEach(x=>{ if(!x.id)x.id=uid("t"); });
-  s.modules.forEach(m=>{ if(m.g===undefined)m.g=""; if(!m.sem)m.sem=""; });
+  s.modules.forEach((m,i)=>{ if(m.g===undefined)m.g=""; if(!m.sem)m.sem="";
+    if(!m.code){ m.code=(["SM","ABM","MM","OHRM","FM","EL2","THESIS"])[i]||("M"+(i+1)); } });
+  // data lama menyimpan nama modul panjang; ubah ke kode
+  const codeOf=v=>{ const m=s.modules.find(x=>x.t===v); return m?m.code:v; };
+  s.sessions.forEach(x=>{ if(x.mod) x.mod=codeOf(x.mod); });
+  s.assignments.forEach(x=>{ if(x.mod) x.mod=codeOf(x.mod); });
+  s.studyLog.forEach(x=>{ if(x.m) x.m=codeOf(x.m); });
+  s.notes.forEach(x=>{ if(x.tag) x.tag=codeOf(x.tag); });
   s.notes.forEach(n=>{ if(!n.id)n.id=uid("n"); });
   return s;
 }
@@ -709,7 +716,8 @@ function attStats(sem){
   return {total,hadir,absent,recorded,allowed,left:allowed-absent,pct:recorded?Math.round(100*hadir/recorded):null};
 }
 function hoursWeek(ws){ return S.studyLog.filter(l=>l.d&&weekStart(l.d)===ws).reduce((a,l)=>a+Number(l.h||0),0); }
-function modOpts(sel){ return `<option value="">—</option>`+S.modules.map(m=>`<option ${m.t===sel?"selected":""}>${esc(m.t)}</option>`).join(""); }
+function modOpts(sel){ return `<option value="">—</option>`+S.modules.map(m=>`<option value="${esc(m.code||m.t)}" ${(m.code||m.t)===sel?"selected":""}>${esc(m.code||"")}${m.code?" — ":""}${esc(m.t)}</option>`).join(""); }
+function modName(code){ const m=S.modules.find(x=>(x.code||x.t)===code); return m?(m.code?m.code:m.t):(code||""); }
 function dayBadge(ds){ const d=daysTo(ds); if(d===null)return ""; const c=d<0?"var(--bad)":d<=7?"var(--warn)":"var(--sub)";
   return `<span class="sub" style="color:${c};white-space:nowrap">${d<0?T().late+" "+(-d):d===0?T().todayIs:d} ${d===0?"":T().days}</span>`; }
 
@@ -724,7 +732,7 @@ function render(){
   document.getElementById("btnImp").textContent=t.imp;
   document.getElementById("bkNote").textContent=t.bkNote;
   document.getElementById("langs").innerHTML=["id","en","ja"].map(l=>`<button class="${LANG===l?'on':''}" onclick="setLang('${l}')">${{id:"ID",en:"EN",ja:"日本語"}[l]}</button>`).join("");
-  const V={dash:vDash,kuliah:vKuliah,notes:vNotes,tesis:vTesis,dana:vDana,draf:vDraf,daftar:vDaftar,me:vMe};
+  const V={dash:vDash,kuliah:vKuliah,notes:vNotes,books:vBooks,tesis:vTesis,dana:vDana,draf:vDraf,daftar:vDaftar,me:vMe};
   if(!V[cur]) cur="dash";
   document.getElementById("nav").innerHTML=Object.entries(t.tabs).map(([id,l])=>`<button class="${cur===id?'active':''}" onclick="go('${id}')">${l}</button>`).join("");
   document.getElementById("main").innerHTML=V[cur]();
@@ -899,7 +907,10 @@ function vKuliah(){
       <td><input type="date" value="${x.dt||""}" onchange="updSess('${x.id}','dt',this.value)"></td>
       <td>${wday(x.dt)}</td>
       <td><input value="${esc(x.t)}" placeholder="${t.sessPh}" onchange="updSess('${x.id}','t',this.value)" style="margin-bottom:4px">
-          <select onchange="updSess('${x.id}','mod',this.value)">${modOpts(x.mod)}</select></td>
+          <div style="display:flex;gap:6px"><select onchange="updSess('${x.id}','mod',this.value)" style="flex:1">${modOpts(x.mod)}</select>
+          <input type="time" value="${x.st||""}" onchange="updSess('${x.id}','st',this.value)" style="width:auto"><input type="time" value="${x.en||""}" onchange="updSess('${x.id}','en',this.value)" style="width:auto"></div>
+          ${x.prep?`<details style="margin-top:2px"><summary style="font-size:.78rem">${t.prepLbl}</summary><textarea rows="3" style="margin-top:4px;font-size:.8rem" onchange="updSess('${x.id}','prep',this.value)">${esc(x.prep)}</textarea></details>`
+            :`<details style="margin-top:2px"><summary style="font-size:.78rem;color:var(--sub)">${t.prepAdd}</summary><textarea rows="3" style="margin-top:4px;font-size:.8rem" onchange="updSess('${x.id}','prep',this.value)"></textarea></details>`}</td>
       <td>${x.nc?`<span class="chip">${t.nc}</span>`:`<select class="att-${x.att}" onchange="updSess('${x.id}','att',this.value)" style="${past&&!x.att?'border-color:var(--warn)':''}">
           ${Object.entries(t.att).map(([k,l])=>`<option value="${k}" ${x.att===k?"selected":""}>${l}</option>`).join("")}</select>`}</td>
       <td style="white-space:nowrap"><a href="${gcalLink(sessItem(x))}" target="_blank" rel="noopener" title="${t.calLinkT}" style="text-decoration:none">📅</a>
@@ -1141,7 +1152,7 @@ function renderNoteList(){
 }
 function vNotes(){
   const t=T(), n=getNote();
-  const tagOpts=sel=>`<option value="" ${!sel?"selected":""}>${t.nNoTag}</option>`+S.modules.map(m=>`<option ${m.t===sel?"selected":""}>${esc(m.t)}</option>`).join("");
+  const tagOpts=sel=>`<option value="" ${!sel?"selected":""}>${t.nNoTag}</option>`+S.modules.map(m=>`<option value="${esc(m.code||m.t)}" ${(m.code||m.t)===sel?"selected":""}>${esc(m.code||m.t)} — ${esc(m.t)}</option>`).join("");
   setTimeout(renderNoteList,0);
   return `
   <div class="notes-wrap">
@@ -1153,7 +1164,7 @@ function vNotes(){
       <select onchange="noteF=this.value;renderNoteList()" style="margin-bottom:8px">
         <option value="*" ${noteF==="*"?"selected":""}>${t.nAll}</option>
         <option value="" ${noteF===""?"selected":""}>${t.nNoTag}</option>
-        ${S.modules.map(m=>`<option ${noteF===m.t?"selected":""}>${esc(m.t)}</option>`).join("")}</select>
+        ${S.modules.map(m=>`<option value="${esc(m.code||m.t)}" ${noteF===(m.code||m.t)?"selected":""}>${esc(m.code||m.t)}</option>`).join("")}</select>
       <div id="noteList" class="note-list"></div>
     </div>
     <div class="card notes-main">
@@ -1316,6 +1327,218 @@ async function gcalSync(){
   }catch(e){ saveQuiet(); msg.textContent=t.calErr+" "+e.message; }
 }
 
+
+/* ================= 教材 (buku) + asisten terjemahan AI ================= */
+const I18N_K2={
+id:{
+ tabs:{dash:"📊 Dashboard",kuliah:"📚 Kuliah",notes:"📓 Catatan",books:"📕 教材",tesis:"🎓 Tesis",dana:"💰 Dana & 給付金",draf:"📝 Draf",daftar:"📁 Arsip",me:"👤 My Page"},
+ prepLbl:"📖 Persiapan sebelum kelas",prepAdd:"＋ tambah catatan persiapan",
+ bkTitle:"📕 Buku & materi (教材)",
+ bkIntro:"Daftar dari コースフォーマット resmi. <b>WAJIB</b> = 必ず入手するもの. Buku bekas atau e-book diperbolehkan — tidak harus baru.",
+ bkFolderT:"📁 Tempat menyimpan e-book & materi",
+ bkFolderNote:"Simpan file PDF/EPUB di folder ini (Google Drive), lalu tempel tautannya di kolom 🔗 tiap buku. Isi kolom dengan path folder atau link berbagi Drive.",
+ bkCopy:"📋 Salin path",bkCopied:"✅ Tersalin",
+ colBook:"Buku",colAu:"Penulis / penerbit",colPhys:"Fisik",colEb:"E-book",colLink:"🔗 File / link",colSum:"Rangkuman",
+ phys:{Belum:"❌ Belum",Dipesan:"🚚 Dipesan",Ada:"✅ Ada"},
+ ebk:{Belum:"❌ Belum",Ada:"✅ Ada"},
+ reqL:{"必須":"WAJIB","推奨":"Opsional"},
+ bkAdd:"+ Buku",bkPh:"Judul buku...",bkSum:"📓 Rangkuman",bkBuy:"🛒 Cari",bkOpen:"📂 Buka",
+ bkStat:(a,b)=>`Buku wajib: ${a} dari ${b} sudah ada`,
+ trTitle:"🤖 Asisten terjemahan & penjelas istilah (AI)",
+ trIntro:"Tempel kalimat sulit dari buku atau slide. Cara ① jalan tanpa persiapan; cara ② memakai Claude dan mengerti istilah MBA/akuntansi.",
+ trSrc:"Teks Jepang",trSrcPh:"Tempel kalimat atau paragraf dari buku di sini...",
+ trTo:"Ke bahasa:",trMode:"Mode:",
+ trModes:{translate:"Terjemahkan",terms:"Jelaskan istilahnya",simple:"Sederhanakan (やさしい日本語)"},
+ trA:"① Tanpa setup",trG:"🌐 Google Translate",trCopy:"📋 Salin prompt (tempel ke Claude/ChatGPT)",
+ trB:"② Langsung di sini (pakai API key sendiri)",
+ trKey:"Anthropic API key:",trModel:"Model:",trRun:"✨ Terjemahkan sekarang",trRunning:"Sedang memproses…",
+ trWarn:"⚠️ Key disimpan di browser perangkat ini saja, tidak dikirim ke mana pun selain api.anthropic.com. Pakai key khusus dengan batas biaya, dan jangan pakai di komputer bersama. Ambil key di console.anthropic.com.",
+ trEmpty:"Tempel dulu teks Jepangnya.",trNoKey:"Isi API key dulu (lihat catatan di bawah).",trOut:"Hasil",
+ trRefuse:"Permintaan ditolak oleh sistem keamanan model.",trErr:"Gagal:"
+},
+en:{
+ tabs:{dash:"📊 Dashboard",kuliah:"📚 Coursework",notes:"📓 Notes",books:"📕 Textbooks",tesis:"🎓 Dissertation",dana:"💰 Funding",draf:"📝 Drafts",daftar:"📁 Archive",me:"👤 My Page"},
+ prepLbl:"📖 Preparation before class",prepAdd:"＋ add preparation note",
+ bkTitle:"📕 Textbooks & materials (教材)",
+ bkIntro:"Taken from the official course formats. <b>REQUIRED</b> = must obtain. Second-hand copies and e-books are fine — they need not be new.",
+ bkFolderT:"📁 Where e-books and materials are stored",
+ bkFolderNote:"Keep PDF/EPUB files in this folder (Google Drive), then paste the link in each book's 🔗 column. Put a folder path or a Drive share link here.",
+ bkCopy:"📋 Copy path",bkCopied:"✅ Copied",
+ colBook:"Book",colAu:"Author / publisher",colPhys:"Print",colEb:"E-book",colLink:"🔗 File / link",colSum:"Summary",
+ phys:{Belum:"❌ No",Dipesan:"🚚 Ordered",Ada:"✅ Yes"},
+ ebk:{Belum:"❌ No",Ada:"✅ Yes"},
+ reqL:{"必須":"REQUIRED","推奨":"Optional"},
+ bkAdd:"+ Book",bkPh:"Book title...",bkSum:"📓 Summary",bkBuy:"🛒 Find",bkOpen:"📂 Open",
+ bkStat:(a,b)=>`Required books: ${a} of ${b} obtained`,
+ trTitle:"🤖 Translation & terminology assistant (AI)",
+ trIntro:"Paste a difficult sentence from a book or slide. Option ① works with no setup; option ② uses Claude and understands MBA/accounting terms.",
+ trSrc:"Japanese text",trSrcPh:"Paste a sentence or paragraph from the book here...",
+ trTo:"Into:",trMode:"Mode:",
+ trModes:{translate:"Translate",terms:"Explain the terms",simple:"Simplify (easy Japanese)"},
+ trA:"① No setup",trG:"🌐 Google Translate",trCopy:"📋 Copy prompt (paste into Claude/ChatGPT)",
+ trB:"② Right here (with your own API key)",
+ trKey:"Anthropic API key:",trModel:"Model:",trRun:"✨ Translate now",trRunning:"Working…",
+ trWarn:"⚠️ The key stays in this browser only and is sent nowhere except api.anthropic.com. Use a dedicated key with a spend limit, and not on a shared computer. Get one at console.anthropic.com.",
+ trEmpty:"Paste the Japanese text first.",trNoKey:"Enter the API key first (see the note below).",trOut:"Result",
+ trRefuse:"The request was declined by the model's safety system.",trErr:"Failed:"
+},
+ja:{
+ tabs:{dash:"📊 ダッシュボード",kuliah:"📚 授業",notes:"📓 ノート",books:"📕 教材",tesis:"🎓 修士論文",dana:"💰 費用・給付金",draf:"📝 原稿",daftar:"📁 出願（記録）",me:"👤 マイページ"},
+ prepLbl:"📖 講義前の準備",prepAdd:"＋ 準備メモを追加",
+ bkTitle:"📕 教材・書籍",
+ bkIntro:"コースフォーマットの指定教材です。<b>必須</b>＝必ず入手するもの。中古・電子書籍でも構いません（新品である必要はありません）。",
+ bkFolderT:"📁 電子書籍・資料の保存場所",
+ bkFolderNote:"PDF／EPUBはこのフォルダ（Google ドライブ）に保存し、各書籍の 🔗 欄にリンクを貼ってください。フォルダのパスまたは共有リンクを入力します。",
+ bkCopy:"📋 パスをコピー",bkCopied:"✅ コピーしました",
+ colBook:"書名",colAu:"著者／出版社",colPhys:"紙",colEb:"電子",colLink:"🔗 ファイル／リンク",colSum:"まとめ",
+ phys:{Belum:"❌ 未入手",Dipesan:"🚚 注文済み",Ada:"✅ あり"},
+ ebk:{Belum:"❌ 未入手",Ada:"✅ あり"},
+ reqL:{"必須":"必須","推奨":"任意"},
+ bkAdd:"＋ 書籍",bkPh:"書名...",bkSum:"📓 まとめ",bkBuy:"🛒 探す",bkOpen:"📂 開く",
+ bkStat:(a,b)=>`必須教材：${b}冊中 ${a}冊 入手済み`,
+ trTitle:"🤖 翻訳・用語解説アシスタント（AI）",
+ trIntro:"教材やスライドの難しい文を貼り付けてください。①は準備なしで使えます。②はClaudeを使い、MBA・会計の専門用語も踏まえて訳します。",
+ trSrc:"日本語のテキスト",trSrcPh:"書籍の文や段落をここに貼り付け...",
+ trTo:"翻訳先：",trMode:"モード：",
+ trModes:{translate:"翻訳する",terms:"用語を解説する",simple:"やさしい日本語にする"},
+ trA:"① 準備なしで使う",trG:"🌐 Google翻訳",trCopy:"📋 プロンプトをコピー（Claude/ChatGPTに貼る）",
+ trB:"② この画面で翻訳（自分のAPIキーを使用）",
+ trKey:"Anthropic APIキー：",trModel:"モデル：",trRun:"✨ 翻訳する",trRunning:"処理中…",
+ trWarn:"⚠️ キーはこの端末のブラウザにのみ保存され、api.anthropic.com 以外には送信されません。利用上限を設定した専用キーを使い、共用PCでは使わないでください。取得は console.anthropic.com。",
+ trEmpty:"先に日本語のテキストを貼り付けてください。",trNoKey:"先にAPIキーを入力してください（下の注意書き参照）。",trOut:"結果",
+ trRefuse:"モデルの安全機構によりリクエストが拒否されました。",trErr:"失敗："
+}};
+for(const l in I18N_K2) Object.assign(I18N[l],I18N_K2[l]);
+
+function updBook(id,k,v){ const b=byId(S.books,id); if(b){ b[k]=v; save(); } }
+function addBook(){
+  const t=document.getElementById("bkT").value.trim(); if(!t) return;
+  S.books.push({id:uid("b"),mod:document.getElementById("bkM").value,req:"推奨",t,au:"",pub:"",isbn:"",phys:"Belum",eb:"Belum",link:"",note:""});
+  save();
+}
+function noteForBook(id){
+  const b=byId(S.books,id); if(!b) return;
+  const ex=S.notes.find(n=>n.book===id); if(ex){ curNote=ex.id; go("notes"); return; }
+  newNote("read",{title:b.t,tag:b.mod||"",book:id});
+}
+function copyPath(txt,btnId){
+  const done=()=>flashBtn(btnId);
+  if(navigator.clipboard&&window.isSecureContext) navigator.clipboard.writeText(txt).then(done).catch(()=>fallbackCopy(txt,done,null));
+  else fallbackCopy(txt,done,null);
+}
+function vBooks(){
+  const t=T();
+  const req=S.books.filter(b=>b.req==="必須");
+  const got=req.filter(b=>b.phys==="Ada"||b.eb==="Ada").length;
+  const rows=S.books.slice().sort((a,b)=>(a.req===b.req?0:a.req==="必須"?-1:1)||String(a.mod).localeCompare(String(b.mod)));
+  const folder=S.settings.ebookDir||"";
+  return `
+  <div class="card"><h2>${t.bkTitle}</h2><div class="sub">${t.bkIntro}</div>
+    <div class="sub" style="margin-top:8px"><b>${t.bkStat(got,req.length)}</b></div>
+    <div class="bar" style="margin-top:6px"><div style="width:${req.length?100*got/req.length:0}%"></div></div></div>
+
+  <div class="card"><h2>${t.bkFolderT}</h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <input value="${esc(folder)}" onchange="S.settings.ebookDir=this.value;save()" style="flex:1;min-width:240px">
+      <button class="btn small gray" id="cpPath" onclick="copyPath(document.querySelector('#main input[onchange*=ebookDir]').value,'cpPath')">${t.bkCopy}</button></div>
+    <div class="small-note">${t.bkFolderNote}</div></div>
+
+  <div class="card">
+    <div class="tbl-wrap"><table><tr><th style="width:80px">${t.colModS}</th><th>${t.colBook}</th><th style="width:150px">${t.colAu}</th>
+      <th style="width:110px">${t.colPhys}</th><th style="width:110px">${t.colEb}</th><th style="width:170px">${t.colLink}</th><th style="width:96px"></th></tr>
+    ${rows.map(b=>`<tr>
+      <td><span class="chip">${esc(b.mod||"-")}</span><div class="sub" style="font-size:.68rem">${t.reqL[b.req]||b.req}</div></td>
+      <td><input value="${esc(b.t)}" onchange="updBook('${b.id}','t',this.value)" style="${b.req==='必須'?'font-weight:600':''}">
+          ${b.note?`<div class="small-note">${esc(b.note)}</div>`:""}
+          ${b.isbn?`<div class="sub" style="font-size:.7rem">ISBN ${esc(b.isbn)}</div>`:""}</td>
+      <td class="sub" style="font-size:.75rem">${esc(b.au)}<br>${esc(b.pub)}</td>
+      <td><select onchange="updBook('${b.id}','phys',this.value)">${Object.entries(t.phys).map(([k,l])=>`<option value="${k}" ${b.phys===k?"selected":""}>${l}</option>`).join("")}</select></td>
+      <td><select onchange="updBook('${b.id}','eb',this.value)">${Object.entries(t.ebk).map(([k,l])=>`<option value="${k}" ${b.eb===k?"selected":""}>${l}</option>`).join("")}</select></td>
+      <td><input value="${esc(b.link)}" placeholder="https://… / path" onchange="updBook('${b.id}','link',this.value)">
+          ${/^https?:\/\//.test(b.link||"")?`<a href="${esc(b.link)}" target="_blank" rel="noopener" class="sub">${t.bkOpen}</a>`:""}</td>
+      <td style="white-space:nowrap">
+        <a href="https://www.amazon.co.jp/s?k=${encodeURIComponent(b.isbn||b.t)}" target="_blank" rel="noopener" title="${t.bkBuy}" style="text-decoration:none">🛒</a>
+        <span style="cursor:pointer" title="${t.bkSum}" onclick="noteForBook('${b.id}')">📓</span>
+        <span class="del" onclick="if(confirm('OK?')){S.books=S.books.filter(y=>y.id!=='${b.id}');save()}">×</span></td></tr>`).join("")}
+    </table></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+      <input id="bkT" placeholder="${t.bkPh}" style="flex:1;min-width:180px">
+      <select id="bkM" style="width:auto">${modOpts("")}</select>
+      <button class="btn small" onclick="addBook()">${t.bkAdd}</button></div></div>
+
+  <div class="card"><h2>${t.trTitle}</h2><div class="sub">${t.trIntro}</div>
+    <div class="sub" style="margin-top:10px">${t.trSrc}</div>
+    <textarea id="trSrc" rows="5" placeholder="${t.trSrcPh}"></textarea>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;align-items:center">
+      <span class="sub">${t.trTo}</span>
+      <select id="trTo" style="width:auto"><option value="id">Bahasa Indonesia</option><option value="en">English</option><option value="ja-easy">やさしい日本語</option></select>
+      <span class="sub">${t.trMode}</span>
+      <select id="trMode" style="width:auto">${Object.entries(t.trModes).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
+    </div>
+    <h2 style="margin-top:14px">${t.trA}</h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn small gray" onclick="trGoogle()">${t.trG}</button>
+      <button class="btn small gray" id="trCp" onclick="trCopyPrompt()">${t.trCopy}</button></div>
+    <h2 style="margin-top:14px">${t.trB}</h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <span class="sub">${t.trKey}</span>
+      <input id="trKey" type="password" value="${esc(S.settings.aiKey||"")}" placeholder="sk-ant-..." style="flex:1;min-width:200px" onchange="S.settings.aiKey=this.value.trim();saveQuiet()">
+      <span class="sub">${t.trModel}</span>
+      <select id="trModel" style="width:auto" onchange="S.settings.aiModel=this.value;saveQuiet()">
+        ${[["claude-opus-5","Opus 5"],["claude-sonnet-5","Sonnet 5"],["claude-haiku-4-5","Haiku 4.5"]].map(([v,l])=>`<option value="${v}" ${(S.settings.aiModel||"claude-opus-5")===v?"selected":""}>${l}</option>`).join("")}</select>
+      <button class="btn small" onclick="trRun()">${t.trRun}</button></div>
+    <div class="small-note">${t.trWarn}</div>
+    <div id="trOut" class="sub" style="margin-top:10px;white-space:pre-wrap;line-height:1.75"></div></div>`;
+}
+function trInputs(){
+  const src=(document.getElementById("trSrc")||{}).value||"";
+  const to=(document.getElementById("trTo")||{}).value||"id";
+  const mode=(document.getElementById("trMode")||{}).value||"translate";
+  return {src:src.trim(),to,mode};
+}
+const TR_LANG={id:"bahasa Indonesia",en:"English","ja-easy":"やさしい日本語（N3程度の語彙と短い文）"};
+function trPrompt(i){
+  const lang=TR_LANG[i.to]||"bahasa Indonesia";
+  const base=`あなたは日本のMBA（経営学・会計学）の教材を読む外国人学習者を助けるアシスタントです。学習者の母語はインドネシア語、日本語能力はN1ですが、経営学・会計学の専門用語には不慣れです。`;
+  const task={
+    translate:`次の日本語を${lang}に訳してください。出力は次の2部構成にしてください。\n【1】訳文（自然で読みやすく。原文の意味を省略しない）\n【2】重要な専門用語（日本語 → ${lang}／英語の定訳 → 1行の説明）を5個以内`,
+    terms:`次の日本語に出てくる経営学・会計学の専門用語を抽出し、${lang}で解説してください。各用語について「日本語表記／英語の定訳／2〜3行のやさしい説明／具体例か身近なたとえ」を書いてください。最後に、文章全体の要点を3行で${lang}でまとめてください。`,
+    simple:`次の日本語を、意味を変えずに「やさしい日本語」に書き直してください。短い文に分け、専門用語には（かっこ）で簡単な言い換えを添えてください。そのあとで、要点を3行で${lang}にも訳してください。`
+  }[i.mode];
+  return {sys:base+"\n"+task+"\n専門用語は勝手に意訳せず、定訳を優先してください。",user:i.src};
+}
+function trGoogle(){
+  const i=trInputs(); if(!i.src){ alert(T().trEmpty); return; }
+  const tl=i.to==="en"?"en":"id";
+  window.open(`https://translate.google.com/?sl=ja&tl=${tl}&op=translate&text=${encodeURIComponent(i.src.slice(0,4000))}`,"_blank","noopener");
+}
+function trCopyPrompt(){
+  const i=trInputs(); if(!i.src){ alert(T().trEmpty); return; }
+  const p=trPrompt(i);
+  copyPath(p.sys+"\n\n---\n\n"+p.user,"trCp");
+}
+async function trRun(){
+  const t=T(), out=document.getElementById("trOut"), i=trInputs();
+  if(!i.src){ out.textContent=t.trEmpty; return; }
+  const keyEl=document.getElementById("trKey");
+  const key=(keyEl&&keyEl.value.trim())||S.settings.aiKey||"";
+  if(!key){ out.textContent=t.trNoKey; return; }
+  S.settings.aiKey=key; const model=(document.getElementById("trModel")||{}).value||"claude-opus-5";
+  S.settings.aiModel=model; saveQuiet();
+  out.textContent=t.trRunning;
+  const p=trPrompt(i);
+  const body={model,max_tokens:8000,system:p.sys,messages:[{role:"user",content:p.user}]};
+  const headers={"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"};
+  if(model==="claude-opus-5"||model==="claude-sonnet-5") body.output_config={effort:"low"};
+  if(model==="claude-opus-5"){ body.fallbacks="default"; headers["anthropic-beta"]="server-side-fallback-2026-07-01"; }
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers,body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){ out.textContent=t.trErr+" "+((j.error&&j.error.message)||("HTTP "+r.status)); return; }
+    if(j.stop_reason==="refusal"){ out.textContent=t.trRefuse; return; }
+    out.textContent=(j.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n").trim()||"(kosong)";
+  }catch(e){ out.textContent=t.trErr+" "+e.message; }
+}
 
 render();
 </script>
