@@ -789,6 +789,7 @@ function render(){
   if(cur==="notes") initEditor();
   if(typeof verTagUpdate==="function") verTagUpdate();
   if(typeof collapseAlerts==="function") collapseAlerts();
+  if(cur==="me"&&typeof encStatus==="function") encStatus();
   if(cur==="kuliah"&&S.settings.gcalClientId&&/^https?:$/.test(location.protocol)) loadGIS().catch(()=>{});
 }
 
@@ -1175,6 +1176,7 @@ function vMe(){
     <div class="sub" style="margin-top:10px"><b></b>${t.brandText}</div>
     <div class="sub" style="margin-top:6px">${t.meBrandJP}</div>
     <div class="small-note">${t.meBrandNote}</div></div>
+  ${typeof encCard==="function"?encCard():""}
   <div class="card"><h2>${t.sgTitle}</h2>
     ${S.mySuggestions.map((sg,i)=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line)">
       <input type="checkbox" ${sg.d?"checked":""} onchange="S.mySuggestions[${i}].d=this.checked;save()">
@@ -1616,11 +1618,11 @@ async function trRun(){
 
 /* ================= Pemberitahuan versi ================= */
 /* APP_VERSION diganti otomatis oleh build-public.ps1 pada setiap rilis; "dev" = file lokal. */
-const APP_VERSION="2026.09.20-1238";
+const APP_VERSION="2026.09.21-0046";
 const APP_NOTES={
- id:"Kalau tab Silabus / Kuliah / 教材 terlihat kosong, sekarang muncul penjelasan dan tombol untuk langsung memuat file data dari Google Drive (cukup sekali per perangkat).",
- en:"When the Syllabus / Coursework / Textbooks tabs look empty, the page now explains why and gives a button to load your data file from Google Drive (once per device).",
- ja:"シラバス・授業・教材タブが空のときに、理由の説明と、Googleドライブのデータファイルをその場で読み込むボタンを表示するようにしました（端末ごとに一度だけ）。"
+ id:"🔐 Data terkunci kata sandi: seluruh datamu bisa diterbitkan sebagai satu file terenkripsi (AES-256-GCM). Di perangkat baru cukup buka halaman ini dan masukkan kata sandi — tidak perlu membawa file JSON. Atur di My Page.",
+ en:"🔐 Password-protected data: publish everything as a single encrypted file (AES-256-GCM). On a new device just open this page and enter your password — no JSON file to carry. Set it up in My Page.",
+ ja:"🔐 パスワード付きデータ：全データを1つの暗号化ファイル（AES-256-GCM）として公開できます。新しい端末ではこのページを開いてパスワードを入力するだけ。設定はマイページから。"
 };
 const I18N_V={
  id:{verUpd:v=>`🆕 Sistem diperbarui ke versi ${v}`,verNew:v=>`🔄 Versi baru tersedia (${v}).`,verReload:"Muat ulang",verOk:"OK",verCur:v=>`versi ${v}`},
@@ -1641,6 +1643,7 @@ function verBar(html){
   if(!el){ el=document.createElement("div"); el.id="verBar"; document.getElementById("main").before(el); }
   el.innerHTML=html;
   if(typeof collapseAlerts==="function") collapseAlerts();
+  if(cur==="me"&&typeof encStatus==="function") encStatus();
 }
 function verDismiss(){ try{ LS.setItem("mba_seen_ver",APP_VERSION); }catch(e){}
   const el=document.getElementById("verBar"); if(el) el.remove(); }
@@ -1783,7 +1786,8 @@ function emptyData(){
   return `<div class="card" style="text-align:center">
     <h2>${t.emT}</h2>
     <div class="sub" style="max-width:620px;margin:6px auto 12px">${t.emB}</div>
-    <button class="btn green" onclick="document.getElementById('imp').click()">${t.emBtn}</button></div>`;
+    <button class="btn green" onclick="document.getElementById('imp').click()">${t.emBtn}</button>
+    <button class="btn gray" style="margin-left:6px" onclick="encModal('open')">${t.encUnlockBtn}</button></div>`;
 }
 function vSilabus(){
   const t=T(), td=todayStr();
@@ -1899,6 +1903,176 @@ function trModal(prefill){
   document.body.style.overflow="hidden";
 }
 function trClose(){ const el=document.getElementById("trModal"); if(el) el.remove(); document.body.style.overflow=""; }
+
+/* ================= 🔐 Data terkunci (AES-256-GCM + PBKDF2) =================
+   File terenkripsi boleh diletakkan di halaman publik: tanpa kata sandi isinya
+   tidak bisa dibaca. Kata sandi tidak pernah dikirim ke mana pun. */
+const ENC_FILE="mba-data.enc";
+const ENC_ITER=310000;
+const I18N_E={
+id:{
+ encTitle:"🔐 Data terkunci kata sandi",
+ encIntro:"Terbitkan seluruh datamu sebagai satu file terenkripsi. Di perangkat baru cukup buka halaman ini lalu masukkan kata sandi — tidak perlu membawa file JSON.",
+ encWarn:"⚠️ File terenkripsi itu diletakkan di halaman publik, jadi siapa pun bisa mengunduhnya walau tidak bisa membacanya. Keamanannya sepenuhnya bergantung pada kata sandimu: pakai minimal 12 karakter, gabungan kata yang tidak mudah ditebak, dan jangan pakai kata sandi yang sudah dipakai di tempat lain.",
+ encPubBtn:"🔐 Buat file terkunci",encUnlockBtn:"🔓 Buka data terkunci",
+ encPass:"Kata sandi",encPass2:"Ulangi kata sandi",
+ encScope:"Isi yang disertakan",encScopeAll:"Semua (termasuk data pribadi, draf, catatan)",encScopeStudy:"Hanya perkuliahan (jadwal, silabus, 教材, catatan, jam belajar)",
+ encMake:"Buat file",encMismatch:"Kata sandi tidak sama.",encWeak:"Kata sandi terlalu pendek — minimal 12 karakter.",
+ encWorking:"Sedang memproses…",
+ encDone:"✅ File dibuat dan diunduh. Langkah berikutnya ada di panduan di bawah.",
+ encHow:"📘 Cara menerbitkannya (sekali per pembaruan)",
+ encHowBody:"<ol style='margin:6px 0 0 18px;line-height:1.9'><li>Tekan <b>Buat file terkunci</b> → file <code>mba-data.enc</code> terunduh ke folder Downloads.</li><li>Jalankan <code>MBA_UWTSD / 3-TERBITKAN-DATA-TERKUNCI.ps1</code> (klik kanan → Run with PowerShell). Script itu menyalin file tadi ke repo publik, memeriksa isinya benar-benar terenkripsi, lalu mengunggahnya.</li><li>Selesai. Di perangkat mana pun, buka halaman ini → <b>Buka data terkunci</b> → masukkan kata sandi.</li></ol><div class='small-note'>Ulangi langkah 1–2 setiap kali kamu ingin perangkat lain melihat data terbaru.</div>",
+ encUnlockT:"🔓 Buka data terkunci",
+ encFetching:"Mengambil file…",encNoFile:"Belum ada file terkunci yang diterbitkan.",
+ encBad:"Kata sandi salah, atau filenya rusak.",
+ encRemember:"Ingat kata sandi di perangkat ini",
+ encOk:"✅ Data terbuka dan dimuat.",
+ encFileAt:d=>`File terkunci terakhir diterbitkan: ${d}`,
+ encSkipped:"🔑 Kunci API dan Client ID tidak pernah ikut ke dalam file ini."
+},
+en:{
+ encTitle:"🔐 Password-protected data",
+ encIntro:"Publish all of your data as a single encrypted file. On a new device just open this page and enter the password — no need to carry the JSON file around.",
+ encWarn:"⚠️ The encrypted file sits on a public page, so anyone can download it even though they cannot read it. Its safety rests entirely on your password: use at least 12 characters, words that are hard to guess, and never a password you already use elsewhere.",
+ encPubBtn:"🔐 Create the locked file",encUnlockBtn:"🔓 Unlock data",
+ encPass:"Password",encPass2:"Repeat password",
+ encScope:"What to include",encScopeAll:"Everything (including personal data, drafts, notes)",encScopeStudy:"Coursework only (schedule, syllabus, textbooks, notes, study hours)",
+ encMake:"Create file",encMismatch:"The passwords do not match.",encWeak:"Password too short — at least 12 characters.",
+ encWorking:"Working…",
+ encDone:"✅ File created and downloaded. Next steps are in the guide below.",
+ encHow:"📘 How to publish it (once per update)",
+ encHowBody:"<ol style='margin:6px 0 0 18px;line-height:1.9'><li>Press <b>Create the locked file</b> → <code>mba-data.enc</code> is downloaded to your Downloads folder.</li><li>Run <code>MBA_UWTSD / 3-TERBITKAN-DATA-TERKUNCI.ps1</code> (right-click → Run with PowerShell). It copies the file into the public repo, verifies it really is encrypted, and uploads it.</li><li>Done. On any device, open this page → <b>Unlock data</b> → enter the password.</li></ol><div class='small-note'>Repeat steps 1–2 whenever you want other devices to see the latest data.</div>",
+ encUnlockT:"🔓 Unlock data",
+ encFetching:"Fetching the file…",encNoFile:"No locked file has been published yet.",
+ encBad:"Wrong password, or the file is damaged.",
+ encRemember:"Remember the password on this device",
+ encOk:"✅ Unlocked and loaded.",
+ encFileAt:d=>`Locked file last published: ${d}`,
+ encSkipped:"🔑 Your API key and Client ID are never included in this file."
+},
+ja:{
+ encTitle:"🔐 パスワード付きデータ",
+ encIntro:"データ全体を暗号化した1つのファイルとして公開します。新しい端末ではこのページを開いてパスワードを入力するだけ。JSONファイルを持ち歩く必要はありません。",
+ encWarn:"⚠️ 暗号化ファイルは公開ページに置かれるため、読めなくても誰でもダウンロードできます。安全性はパスワードの強さだけに依存します。12文字以上、推測されにくい組み合わせにし、他で使っているパスワードは絶対に使わないでください。",
+ encPubBtn:"🔐 ロックファイルを作成",encUnlockBtn:"🔓 データを復号する",
+ encPass:"パスワード",encPass2:"パスワード（確認）",
+ encScope:"含める内容",encScopeAll:"すべて（個人情報・原稿・ノートを含む）",encScopeStudy:"授業関連のみ（日程・シラバス・教材・ノート・学習時間）",
+ encMake:"ファイルを作成",encMismatch:"パスワードが一致しません。",encWeak:"パスワードが短すぎます（12文字以上）。",
+ encWorking:"処理中…",
+ encDone:"✅ ファイルを作成してダウンロードしました。次の手順は下の案内をご覧ください。",
+ encHow:"📘 公開する手順（更新のたびに一度）",
+ encHowBody:"<ol style='margin:6px 0 0 18px;line-height:1.9'><li><b>ロックファイルを作成</b>を押す → <code>mba-data.enc</code> がダウンロードフォルダに保存されます。</li><li><code>MBA_UWTSD / 3-TERBITKAN-DATA-TERKUNCI.ps1</code> を右クリック →「PowerShell で実行」。公開リポジトリへコピーし、暗号化されているか検査してからアップロードします。</li><li>完了。どの端末でもこのページを開き <b>データを復号する</b> → パスワードを入力。</li></ol><div class='small-note'>他の端末に最新データを反映したいときは、1〜2を繰り返してください。</div>",
+ encUnlockT:"🔓 データを復号する",
+ encFetching:"ファイルを取得中…",encNoFile:"公開されたロックファイルはまだありません。",
+ encBad:"パスワードが違うか、ファイルが壊れています。",
+ encRemember:"この端末にパスワードを保存する",
+ encOk:"✅ 復号して読み込みました。",
+ encFileAt:d=>`ロックファイルの最終公開：${d}`,
+ encSkipped:"🔑 APIキーとクライアントIDはこのファイルに含まれません。"
+}};
+for(const l in I18N_E) Object.assign(I18N[l],I18N_E[l]);
+
+const b64enc=buf=>{ const u=new Uint8Array(buf); let s=""; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); };
+const b64dec=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function encKey(pass,salt,it){
+  const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pass),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:it,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+async function encPack(pass,obj){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await encKey(pass,salt,ENC_ITER);
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(obj)));
+  return {v:1,alg:"AES-256-GCM",kdf:"PBKDF2-SHA256",it:ENC_ITER,salt:b64enc(salt),iv:b64enc(iv),ct:b64enc(ct),at:new Date().toISOString()};
+}
+async function encUnpack(pass,pack){
+  const key=await encKey(pass,b64dec(pack.salt),pack.it||ENC_ITER);
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64dec(pack.iv)},key,b64dec(pack.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+/* Data yang diikutkan. Kunci API & Client ID selalu dibuang. */
+function encPayload(all){
+  const d=cp(S);
+  if(d.settings){ delete d.settings.aiKey; delete d.settings.gcalClientId; delete d.settings.gcalCalId; }
+  delete d.gcalMap;
+  if(!all){ ["myFields","contacts","drafts","payments","kyufu","helloWork","berkas","thesis","thesisIdeas","thesisPlan","mySuggestions","archiveV4"].forEach(k=>delete d[k]); }
+  return d;
+}
+function encModal(mode){
+  const t=T();
+  let el=document.getElementById("encModal");
+  if(!el){ el=document.createElement("div"); el.id="encModal"; document.body.appendChild(el); }
+  el.className="modal";
+  const body=mode==="make"?`
+    <div class="alert">${t.encWarn}</div>
+    <div class="sub">${t.encPass}</div><input id="encP1" type="password" autocomplete="new-password">
+    <div class="sub" style="margin-top:6px">${t.encPass2}</div><input id="encP2" type="password" autocomplete="new-password">
+    <div class="sub" style="margin-top:10px">${t.encScope}</div>
+    <select id="encScope"><option value="all">${t.encScopeAll}</option><option value="study">${t.encScopeStudy}</option></select>
+    <div class="small-note">${t.encSkipped}</div>
+    <div style="margin-top:12px"><button class="btn" onclick="encMake()">${t.encMake}</button></div>
+    <details style="margin-top:10px"><summary>${t.encHow}</summary><div class="sub">${t.encHowBody}</div></details>`
+  :`<div class="sub">${t.encPass}</div><input id="encP1" type="password" autocomplete="current-password">
+    <label style="display:flex;gap:6px;align-items:center;margin-top:8px;font-size:.85rem">
+      <input type="checkbox" id="encRem"> ${t.encRemember}</label>
+    <div style="margin-top:12px"><button class="btn" onclick="encDoUnlock()">${t.encUnlockBtn}</button></div>`;
+  el.innerHTML=`<div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2 style="margin:0">${mode==="make"?t.encTitle:t.encUnlockT}</h2>
+      <button class="btn small gray" onclick="encClose()">${t.trClose}</button></div>
+    <div class="sub" style="margin-top:6px">${mode==="make"?t.encIntro:""}</div>
+    ${body}<div id="encMsg" class="sub" style="margin-top:10px"></div></div>`;
+  el.onclick=e=>{ if(e.target===el) encClose(); };
+  document.body.style.overflow="hidden";
+  setTimeout(()=>{ const p=document.getElementById("encP1"); if(p) p.focus(); },50);
+}
+function encClose(){ const el=document.getElementById("encModal"); if(el) el.remove(); document.body.style.overflow=""; }
+async function encMake(){
+  const t=T(), msg=document.getElementById("encMsg");
+  const p1=document.getElementById("encP1").value, p2=document.getElementById("encP2").value;
+  if(p1!==p2){ msg.textContent=t.encMismatch; return; }
+  if(p1.length<12){ msg.textContent=t.encWeak; return; }
+  msg.textContent=t.encWorking;
+  try{
+    const all=document.getElementById("encScope").value==="all";
+    const pack=await encPack(p1,encPayload(all));
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(pack)],{type:"application/octet-stream"}));
+    a.download=ENC_FILE; a.click();
+    msg.innerHTML="<b>"+t.encDone+"</b>";
+  }catch(e){ msg.textContent=t.trErr+" "+e.message; }
+}
+async function encDoUnlock(){
+  const t=T(), msg=document.getElementById("encMsg");
+  const pass=document.getElementById("encP1").value; if(!pass) return;
+  msg.textContent=t.encFetching;
+  try{
+    const r=await fetch(ENC_FILE+"?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok){ msg.textContent=t.encNoFile; return; }
+    const pack=await r.json();
+    msg.textContent=t.encWorking;
+    let obj; try{ obj=await encUnpack(pass,pack); }catch(e){ msg.textContent=t.encBad; return; }
+    if(document.getElementById("encRem").checked){ try{ LS.setItem("mba_enc_pass",pass); }catch(e){} }
+    S=migrate(obj); curNote=null; save();
+    try{ LS.setItem("mba_last_export",Date.now()); }catch(e){}
+    msg.textContent=t.encOk; setTimeout(encClose,700);
+  }catch(e){ msg.textContent=t.trErr+" "+e.message; }
+}
+/* kartu di My Page + tombol di layar kosong */
+function encCard(){
+  const t=T();
+  return `<div class="card"><h2>${t.encTitle}</h2><div class="sub">${t.encIntro}</div>
+    <div class="alert" style="margin-top:8px">${t.encWarn}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn" onclick="encModal('make')">${t.encPubBtn}</button>
+      <button class="btn gray" onclick="encModal('open')">${t.encUnlockBtn}</button></div>
+    <details style="margin-top:10px"><summary>${t.encHow}</summary><div class="sub">${t.encHowBody}</div></details>
+    <div id="encStat" class="small-note"></div></div>`;
+}
+async function encStatus(){
+  const el=document.getElementById("encStat"); if(!el||!/^https?:$/.test(location.protocol)) return;
+  try{ const r=await fetch(ENC_FILE+"?t="+Date.now(),{cache:"no-store"}); if(!r.ok) return;
+    const j=await r.json(); if(j&&j.at) el.textContent=T().encFileAt(new Date(j.at).toLocaleString(LOCALE[P()]||"en-GB"));
+  }catch(e){}
+}
 
 render();
 verInit();
