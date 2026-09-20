@@ -55,6 +55,10 @@ button.btn.green{background:var(--acc2)} button.btn.gray{background:#8a93a6} but
 h1,h2,th,td,.sub,.alert,.small-note,.chip,nav button,label,summary,button.btn,footer,header p{white-space:pre-line}
 nav button{line-height:1.3}
 .chip{white-space:pre-line;text-align:center}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:20px 12px;overflow:auto;z-index:50}
+.modal-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;max-width:760px;width:100%}
+details>summary{list-style:none} details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"▸ ";color:var(--sub)} details[open]>summary::before{content:"▾ "}
 footer{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding:8px 16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 a{color:var(--accT)}
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -681,6 +685,9 @@ function migrate(raw){
   // kunci baru & id stabil (dipakai sinkron kalender dan tautan catatan)
   ["semesters","sessions","assignments","notes","thesisPlan","studyLog","books"].forEach(k=>{ if(!Array.isArray(s[k])) s[k]=cp(SEED[k]||[]); });
   if(!s.thesis) s.thesis=cp(SEED.thesis);
+  if(!s.courses) s.courses={};
+  if(typeof COURSES!=="undefined") for(const k in COURSES){ if(!s.courses[k]) s.courses[k]=cp(COURSES[k]); }
+  if(typeof SYL!=="undefined") s.sessions.forEach(x=>{ const y=SYL[x.id]; if(y) for(const fld in y){ if(x[fld]===undefined) x[fld]=cp(y[fld]); } });
   s.settings=Object.assign(cp(SEED.settings),s.settings||{});
   if(!s.gcalMap) s.gcalMap={};
   s.sessions.forEach(x=>{ if(!x.id)x.id=uid("s"); if(!x.sem)x.sem=semOf(x.dt,s); if(x.att===undefined)x.att=""; });
@@ -769,7 +776,7 @@ function render(){
   document.getElementById("btnImp").innerHTML=t.imp;
   document.getElementById("bkNote").innerHTML=t.bkNote;
   document.getElementById("langs").innerHTML=Object.keys(PAIRS).map(l=>`<button class="${LANG===l?'on':''}" onclick="setLang('${l}')">${LANG_LABEL[l]}</button>`).join("");
-  const V={dash:vDash,kuliah:vKuliah,notes:vNotes,books:vBooks,tesis:vTesis,dana:vDana,draf:vDraf,daftar:vDaftar,me:vMe};
+  const V={dash:vDash,kuliah:vKuliah,silabus:vSilabus,notes:vNotes,books:vBooks,tesis:vTesis,dana:vDana,draf:vDraf,daftar:vDaftar,me:vMe};
   if(!V[cur]) cur="dash";
   document.getElementById("nav").innerHTML=Object.entries(t.tabs).map(([id,l])=>`<button class="${cur===id?'active':''}" onclick="go('${id}')">${l}</button>`).join("");
   document.getElementById("main").innerHTML=V[cur]();
@@ -814,6 +821,16 @@ function vDash(){
   ${unrec?`<div class="alert">${t.alUnrec(unrec)}</div>`:""}
   ${a.recorded>=3&&a.pct<80?`<div class="alert red">${t.alAtt(a.pct)}</div>`:a.total>=5&&a.left<=1?`<div class="alert red">${t.alLeft(Math.max(0,a.left))}</div>`:""}
   ${over?`<div class="alert red">${t.alOver(over)}</div>`:""}
+  ${(()=>{ if(typeof ckItems!=="function") return "";
+      // pertemuan terdekat yang memang punya daftar persiapan
+      const cand=S.sessions.filter(x=>x.dt&&x.dt>=td).sort((p,q)=>p.dt<q.dt?-1:1);
+      for(const n of cand){
+        const items=ckItems(n), todo=n.todo||[], ck=n.ck||{};
+        if(!items.length&&!todo.length) continue;
+        const left=items.filter(i=>!ck[i.k]).length+todo.filter(z=>!z.d).length;
+        const d=daysTo(n.dt);
+        return (left&&d!==null&&d<=21)?`<div class="alert">${t.alPrep(left,d)}</div>`:"";
+      } return ""; })()}
   <div class="grid c2">
     <div class="card"><h2>${t.upTitle}</h2>
       ${up.length?up.slice(0,8).map(x=>`<div class="up-row"><b>${x.d.slice(5).replace("-","/")}</b><span class="chip">${x.k}</span><span style="flex:1">${esc(x.x)}</span>${dayBadge(x.d)}</div>`).join(""):`<div class="sub">${t.upNone}</div>`}</div>
@@ -1464,6 +1481,19 @@ function copyPath(txt,btnId){
   if(navigator.clipboard&&window.isSecureContext) navigator.clipboard.writeText(txt).then(done).catch(()=>fallbackCopy(txt,done,null));
   else fallbackCopy(txt,done,null);
 }
+/* Ringkasan otomatis: buku ini dipakai di sesi mana, dan kapan paling dekat dibutuhkan */
+function bkUsage(b){
+  const t=T(), td=todayStr();
+  const used=S.sessions.filter(x=>(x.rd||[]).some(r=>r.b===b.id)).sort((p,q)=>(p.dt||"")<(q.dt||"")?-1:1);
+  if(!used.length) return "";
+  const next=used.find(x=>x.dt>=td);
+  const chips=used.map(x=>{ const r=(x.rd||[]).find(r=>r.b===b.id)||{};
+    return `<span class="chip" style="font-size:.68rem">${esc(sessNo(x))} ${esc((x.dt||"").slice(5).replace("-","/"))} ${esc(r.p||"")}</span>`; }).join(" ");
+  let warn="";
+  if(next&&!bookHave(b)){ const d=daysTo(next.dt);
+    warn=`<div style="color:var(--bad);font-weight:600">${d<=0?t.bkToday:t.bkSoon(d)}</div>`; }
+  return warn+chips;
+}
 function vBooks(){
   const t=T();
   const req=S.books.filter(b=>b.req==="必須");
@@ -1483,7 +1513,7 @@ function vBooks(){
 
   <div class="card">
     <div class="tbl-wrap"><table><tr><th style="width:80px">${t.colModS}</th><th>${t.colBook}</th><th style="width:150px">${t.colAu}</th>
-      <th style="width:110px">${t.colPhys}</th><th style="width:110px">${t.colEb}</th><th style="width:170px">${t.colLink}</th><th style="width:96px"></th></tr>
+      <th style="width:110px">${t.colPhys}</th><th style="width:110px">${t.colEb}</th><th style="width:170px">${t.colLink}</th><th style="width:170px">${t.bkUsed}</th><th style="width:96px"></th></tr>
     ${rows.map(b=>`<tr>
       <td><span class="chip">${esc(b.mod||"-")}</span><div class="sub" style="font-size:.68rem">${t.reqL[b.req]||b.req}</div></td>
       <td><input value="${esc(b.t)}" onchange="updBook('${b.id}','t',this.value)" style="${b.req==='必須'?'font-weight:600':''}">
@@ -1494,6 +1524,7 @@ function vBooks(){
       <td><select onchange="updBook('${b.id}','eb',this.value)">${Object.entries(t.ebk).map(([k,l])=>`<option value="${k}" ${b.eb===k?"selected":""}>${l}</option>`).join("")}</select></td>
       <td><input value="${esc(b.link)}" placeholder="https://… / path" onchange="updBook('${b.id}','link',this.value)">
           ${/^https?:\/\//.test(b.link||"")?`<a href="${esc(b.link)}" target="_blank" rel="noopener" class="sub">${t.bkOpen}</a>`:""}</td>
+      <td class="sub" style="font-size:.73rem">${bkUsage(b)}</td>
       <td style="white-space:nowrap">
         <a href="https://www.amazon.co.jp/s?k=${encodeURIComponent(b.isbn||b.t)}" target="_blank" rel="noopener" title="${t.bkBuy}" style="text-decoration:none">🛒</a>
         <span style="cursor:pointer" title="${t.bkSum}" onclick="noteForBook('${b.id}')">📓</span>
@@ -1505,28 +1536,7 @@ function vBooks(){
       <button class="btn small" onclick="addBook()">${t.bkAdd}</button></div></div>
 
   <div class="card"><h2>${t.trTitle}</h2><div class="sub">${t.trIntro}</div>
-    <div class="sub" style="margin-top:10px">${t.trSrc}</div>
-    <textarea id="trSrc" rows="5" placeholder="${t.trSrcPh}"></textarea>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;align-items:center">
-      <span class="sub">${t.trTo}</span>
-      <select id="trTo" style="width:auto"><option value="id">Bahasa Indonesia</option><option value="en">English</option><option value="ja-easy">やさしい日本語</option></select>
-      <span class="sub">${t.trMode}</span>
-      <select id="trMode" style="width:auto">${Object.entries(t.trModes).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
-    </div>
-    <h2 style="margin-top:14px">${t.trA}</h2>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn small gray" onclick="trGoogle()">${t.trG}</button>
-      <button class="btn small gray" id="trCp" onclick="trCopyPrompt()">${t.trCopy}</button></div>
-    <h2 style="margin-top:14px">${t.trB}</h2>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-      <span class="sub">${t.trKey}</span>
-      <input id="trKey" type="password" value="${esc(S.settings.aiKey||"")}" placeholder="sk-ant-..." style="flex:1;min-width:200px" onchange="S.settings.aiKey=this.value.trim();saveQuiet()">
-      <span class="sub">${t.trModel}</span>
-      <select id="trModel" style="width:auto" onchange="S.settings.aiModel=this.value;saveQuiet()">
-        ${[["claude-opus-5","Opus 5"],["claude-sonnet-5","Sonnet 5"],["claude-haiku-4-5","Haiku 4.5"]].map(([v,l])=>`<option value="${v}" ${(S.settings.aiModel||"claude-opus-5")===v?"selected":""}>${l}</option>`).join("")}</select>
-      <button class="btn small" onclick="trRun()">${t.trRun}</button></div>
-    <div class="small-note">${t.trWarn}</div>
-    <div id="trOut" class="sub" style="margin-top:10px;white-space:pre-wrap;line-height:1.75"></div></div>`;
+    <button class="btn" style="margin-top:10px" onclick="trModal('')">${t.trOpen}</button></div>`;
 }
 function trInputs(){
   const src=(document.getElementById("trSrc")||{}).value||"";
@@ -1580,11 +1590,11 @@ async function trRun(){
 
 /* ================= Pemberitahuan versi ================= */
 /* APP_VERSION diganti otomatis oleh build-public.ps1 pada setiap rilis; "dev" = file lokal. */
-const APP_VERSION="2026.09.20-1200";
+const APP_VERSION="2026.09.20-1227";
 const APP_NOTES={
- id:"Tampilan dua bahasa sekaligus (pilih 日本語/EN atau Indonesia/EN) + pemberitahuan otomatis kalau ada versi baru. Sebelumnya: jadwal & silabus 秋学期 2026 (31 sesi), 7 tugas berikut deadline Turnitin, tab 📕 教材, dan asisten terjemahan AI.",
- en:"Side-by-side bilingual interface (choose 日本語/EN or Indonesia/EN) plus an automatic notice when a new version is published. Earlier: autumn 2026 schedule & syllabus (31 sessions), 7 assignments with Turnitin deadlines, the 📕 Textbooks tab, and the AI translation helper.",
- ja:"二言語同時表示（日本語/EN または Indonesia/EN を選択）と、新しいバージョン公開時の自動通知を追加。直前の更新：秋学期2026の日程・シラバス（全31回）、Turnitin締切つき課題7件、📕教材タブ、AI翻訳アシスタント。"
+ id:"Tab 📘 Silabus baru: isi silabus resmi SM & ABM, tiap pertemuan lengkap dengan tujuan, materi, kata kunci, pertanyaan diskusi, bagian buku yang harus dibaca, checklist persiapan, bank materi, tombol catatan dan terjemahan. Status ketersediaan buku otomatis terangkum di tab 📕 教材.",
+ en:"New 📘 Syllabus tab: the official SM & ABM syllabi, each session with outcomes, contents, keywords, discussion questions, the exact chapters to read, a preparation checklist, a material bank, and note/translate buttons. Book availability is rolled up automatically in the 📕 Textbooks tab.",
+ ja:"📘シラバスタブを追加：SM・ABMの公式シラバスを収録し、各回の到達目標・講義内容・キーワード・討論準備・読むべき章・準備チェックリスト・資料バンク・ノート／翻訳ボタンを一画面に。教材の入手状況は📕教材タブに自動集約されます。"
 };
 const I18N_V={
  id:{verUpd:v=>`🆕 Sistem diperbarui ke versi ${v}`,verNew:v=>`🔄 Versi baru tersedia (${v}).`,verReload:"Muat ulang",verOk:"OK",verCur:v=>`versi ${v}`},
@@ -1641,6 +1651,210 @@ function verInit(){
   verTimer=setInterval(verCheck,10*60*1000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden) verCheck(); });
 }
+
+/* ================= 📘 Silabus per科目 ================= */
+const I18N_S={
+id:{
+ tabs:{dash:"📊 Dashboard",kuliah:"📚 Kuliah",silabus:"📘 Silabus",notes:"📓 Catatan",books:"📕 教材",tesis:"🎓 Tesis",dana:"💰 Dana & 給付金",draf:"📝 Draf",daftar:"📁 Arsip",me:"👤 My Page"},
+ syNo:"Silabus untuk mata kuliah ini belum dimasukkan.",
+ syKode:"Kode",syTerm:"Periode",syTime:"Jam",syCredit:"Kredit",syTeacher:"Dosen",syQa:"Cara bertanya",
+ syAims:"目的 / Tujuan",syOut:"受講後の達成目標 / Capaian",syCont:"講義で取り扱う内容 / Cakupan",syTeach:"講義運営方法 / Cara kelas berjalan",syPre:"受講前に備えるべきこと",
+ syExam:"最終試験と評価方法 / Ujian & penilaian",sySub:"提出先・ファイル名 / Pengumpulan",syAi:"AI利用の規定 / Aturan AI",
+ syBooks:"📕 教材 untuk mata kuliah ini",syBookNeed:n=>`dipakai di ${n} pertemuan`,syBookNone:"belum dipakai di sesi mana pun",
+ syGoals:"受講後の到達目標",syContent:"講義内容",syKw:"キーワード",syWork:"進め方・準備する議論",syRead:"📕 読む範囲",syRef:"📄 その他の資料",syPre2:"📤 提出物",
+ syCk:"✅ Checklist persiapan",syCkAdd:"Tambah item sendiri...",syCkNone:"Belum ada item.",
+ syMat:"📎 Bank materi",syMatAdd:"Nama file / materi",syMatUrl:"Link atau path",syMatNone:"Belum ada materi tersimpan.",
+ syNote:"📓 Catatan",syTr:"🤖 Terjemahkan",syDone:(a,b)=>`${a}/${b} siap`,
+ syNext:"BERIKUTNYA",syPast:"selesai",
+ bkUsed:"Dipakai di",bkSoon:d=>`⚠️ dibutuhkan ${d} hari lagi`,bkToday:"⚠️ dibutuhkan hari ini",
+ trOpen:"🤖 Buka asisten terjemahan",trClose:"Tutup",
+ alPrep:(n,d)=>`📘 Persiapan pertemuan berikutnya (${d} hari lagi): <b>${n}</b> item belum selesai — buka tab Silabus.`
+},
+en:{
+ tabs:{dash:"📊 Dashboard",kuliah:"📚 Coursework",silabus:"📘 Syllabus",notes:"📓 Notes",books:"📕 Textbooks",tesis:"🎓 Dissertation",dana:"💰 Funding",draf:"📝 Drafts",daftar:"📁 Archive",me:"👤 My Page"},
+ syNo:"The syllabus for this module has not been entered yet.",
+ syKode:"Code",syTerm:"Period",syTime:"Time",syCredit:"Credits",syTeacher:"Lecturer",syQa:"How to ask questions",
+ syAims:"Aims",syOut:"Learning outcomes",syCont:"Indicative contents",syTeach:"Learning & teaching strategy",syPre:"Prepare before the course",
+ syExam:"Final exam & assessment",sySub:"Submission & file names",syAi:"AI usage rules",
+ syBooks:"📕 Textbooks for this module",syBookNeed:n=>`used in ${n} sessions`,syBookNone:"not used in any session yet",
+ syGoals:"Learning outcomes",syContent:"Session content",syKw:"Keywords",syWork:"Preparation & discussion",syRead:"📕 Pages to read",syRef:"📄 Other materials",syPre2:"📤 To submit",
+ syCk:"✅ Preparation checklist",syCkAdd:"Add your own item...",syCkNone:"No items yet.",
+ syMat:"📎 Material bank",syMatAdd:"File / material name",syMatUrl:"Link or path",syMatNone:"No materials saved yet.",
+ syNote:"📓 Notes",syTr:"🤖 Translate",syDone:(a,b)=>`${a}/${b} ready`,
+ syNext:"NEXT",syPast:"done",
+ bkUsed:"Used in",bkSoon:d=>`⚠️ needed in ${d} days`,bkToday:"⚠️ needed today",
+ trOpen:"🤖 Open the translation assistant",trClose:"Close",
+ alPrep:(n,d)=>`📘 Preparation for the next class (in ${d} days): <b>${n}</b> item(s) left — open the Syllabus tab.`
+},
+ja:{
+ tabs:{dash:"📊 ダッシュボード",kuliah:"📚 授業",silabus:"📘 シラバス",notes:"📓 ノート",books:"📕 教材",tesis:"🎓 修士論文",dana:"💰 費用・給付金",draf:"📝 原稿",daftar:"📁 出願（記録）",me:"👤 マイページ"},
+ syNo:"この科目のシラバスは未登録です。",
+ syKode:"科目コード",syTerm:"開講期間",syTime:"時間",syCredit:"取得単位",syTeacher:"担当教員",syQa:"質問方法",
+ syAims:"目的",syOut:"受講後の達成目標",syCont:"講義で取り扱う内容",syTeach:"講義運営方法",syPre:"受講開始までに備えておくべきこと",
+ syExam:"最終試験内容と評価方法",sySub:"提出日・ファイル名",syAi:"AI使用規定",
+ syBooks:"📕 この科目の教材",syBookNeed:n=>`${n}回の授業で使用`,syBookNone:"使用する回は未登録",
+ syGoals:"受講後の到達目標",syContent:"講義内容",syKw:"キーワード",syWork:"進め方・準備する議論",syRead:"📕 読む範囲",syRef:"📄 その他の資料",syPre2:"📤 提出物",
+ syCk:"✅ 準備チェックリスト",syCkAdd:"項目を追加...",syCkNone:"項目はまだありません。",
+ syMat:"📎 資料バンク",syMatAdd:"資料の名前",syMatUrl:"リンクまたはパス",syMatNone:"保存された資料はまだありません。",
+ syNote:"📓 ノート",syTr:"🤖 翻訳",syDone:(a,b)=>`${a}/${b} 完了`,
+ syNext:"次回",syPast:"終了",
+ bkUsed:"使用する回",bkSoon:d=>`⚠️ あと${d}日で必要`,bkToday:"⚠️ 本日必要",
+ trOpen:"🤖 翻訳アシスタントを開く",trClose:"閉じる",
+ alPrep:(n,d)=>`📘 次回（${d}日後）の準備：未完了が <b>${n}</b> 件あります — シラバスタブで確認。`
+}};
+for(const l in I18N_S) Object.assign(I18N[l],I18N_S[l]);
+
+let syMod=null;
+const bookById=id=>S.books.find(b=>b.id===id);
+const bookHave=b=>b&&(b.phys==="Ada"||b.eb==="Ada");
+/* daftar item checklist otomatis dari isi silabus */
+function ckItems(x){
+  const out=[];
+  (x.rd||[]).forEach((r,i)=>{ const b=bookById(r.b); out.push({k:"rd"+i,t:"📕 "+(b?b.t:r.b)+"　"+(r.p||""),warn:!bookHave(b)}); });
+  (x.rf||[]).forEach((r,i)=>out.push({k:"rf"+i,t:"📄 "+r}));
+  (x.w||[]).forEach((w,i)=>out.push({k:"w"+i,t:"✍️ "+w}));
+  if(x.pre) out.push({k:"pre",t:"📤 "+x.pre});
+  return out;
+}
+function ckToggle(id,k,v){ const x=byId(S.sessions,id); if(!x)return; x.ck=x.ck||{}; x.ck[k]=v; saveQuiet(); syProg(id); }
+function syProg(id){
+  const x=byId(S.sessions,id); if(!x) return;
+  const items=ckItems(x).concat((x.todo||[]).map((t,i)=>({k:"c"+i})));
+  const done=items.filter(i=>(x.ck||{})[i.k]||((x.todo||[])[+String(i.k).slice(1)]||{}).d).length;
+  const el=document.getElementById("prog-"+id);
+  if(el) el.textContent=items.length?T().syDone(items.filter(i=>(x.ck||{})[i.k]).length,items.length):"";
+}
+function ckAdd(id){
+  const el=document.getElementById("ck-"+id); const v=(el.value||"").trim(); if(!v) return;
+  const x=byId(S.sessions,id); if(!x) return; x.todo=x.todo||[]; x.todo.push({t:v,d:false}); save();
+}
+function matAdd(id){
+  const t=(document.getElementById("mt-"+id).value||"").trim();
+  const u=(document.getElementById("mu-"+id).value||"").trim();
+  if(!t&&!u) return;
+  const x=byId(S.sessions,id); if(!x) return; x.mats=x.mats||[]; x.mats.push({t:t||u,u}); save();
+}
+function noteForSess2(id){ noteForSession(id); }
+function trFromSess(id){
+  const x=byId(S.sessions,id); if(!x) return;
+  trModal([x.t,x.g,x.c,x.kw&&("キーワード: "+x.kw)].filter(Boolean).join("\n"));
+}
+function sessNo(x){ const m=String(x.t||"").match(/[①-⑮]|第\s*\d+\s*回/); return m?m[0]:""; }
+
+function vSilabus(){
+  const t=T(), td=todayStr();
+  const list=S.modules.filter(m=>S.courses&&S.courses[m.code]);
+  if(!list.length) return `<div class="card"><div class="sub">${t.syNo}</div></div>`;
+  if(!syMod||!S.courses[syMod]) syMod=list[0].code;
+  const c=S.courses[syMod];
+  const sess=S.sessions.filter(x=>x.mod===syMod).sort((a,b)=>(a.dt||"")<(b.dt||"")?-1:1);
+  const nextId=(sess.find(x=>x.dt>=td)||{}).id;
+  const books=S.books.filter(b=>b.mod===syMod);
+  const row=(lbl,val)=>val?`<tr><th style="width:170px">${lbl}</th><td>${esc(val)}</td></tr>`:"";
+  return `
+  <div class="card">
+    <div class="semtabs">${list.map(m=>`<button class="${m.code===syMod?'on':''}" onclick="syMod='${m.code}';render()">${esc(m.code)}</button>`).join("")}</div>
+    <h2>${esc(c.nameJa||c.name)}</h2><div class="sub">${esc(c.name)}</div>
+    <div class="tbl-wrap"><table style="margin-top:8px">
+      ${row(t.syKode,c.kode)}${row(t.syTerm,c.term)}${row(t.syTime,c.time)}${row(t.syCredit,c.credit)}${row(t.syTeacher,c.teacher)}${row(t.syQa,c.qa)}
+    </table></div>
+    <details><summary>${t.syAims}</summary><div class="sub" style="margin-top:6px">${esc(c.aims)}</div></details>
+    <details><summary>${t.syOut}</summary><div class="sub" style="margin-top:6px">${esc(c.outcomes)}</div></details>
+    <details><summary>${t.syCont}</summary><div class="sub" style="margin-top:6px">${esc(c.contents)}</div></details>
+    <details><summary>${t.syTeach}</summary><div class="sub" style="margin-top:6px">${esc(c.teaching)}</div></details>
+    <details><summary>${t.syPre}</summary><div class="sub" style="margin-top:6px">${esc(c.prereq)}</div></details>
+    <details><summary>${t.syExam}</summary><div class="sub" style="margin-top:6px">${esc(c.exam)}</div></details>
+    <details><summary>${t.sySub}</summary><div class="sub" style="margin-top:6px">${esc(c.submit)}</div></details>
+    <details><summary>${t.syAi}</summary><div class="sub" style="margin-top:6px">${esc(c.ai)}</div></details>
+  </div>
+
+  <div class="card"><h2>${t.syBooks}</h2>
+    <div class="tbl-wrap"><table><tr><th>${t.colBook}</th><th style="width:100px">${t.colPhys}</th><th style="width:100px">${t.colEb}</th><th style="width:150px">${t.bkUsed}</th></tr>
+    ${books.map(b=>{ const used=S.sessions.filter(x=>(x.rd||[]).some(r=>r.b===b.id));
+      return `<tr><td>${b.req==="必須"?"<b>":""}${esc(b.t)}${b.req==="必須"?"</b>":""}<div class="sub" style="font-size:.7rem">${t.reqL[b.req]||b.req}</div></td>
+      <td><span class="chip">${t.phys[b.phys]||b.phys}</span></td><td><span class="chip">${t.ebk[b.eb]||b.eb}</span></td>
+      <td class="sub" style="font-size:.75rem">${used.length?t.syBookNeed(used.length):t.syBookNone}</td></tr>`;}).join("")}
+    </table></div>
+    <div class="small-note"><a href="#" onclick="go('books');return false">${t.bkTitle}</a></div></div>
+
+  ${sess.map(x=>{
+    const items=ckItems(x), ck=x.ck||{}, todo=x.todo||[], mats=x.mats||[];
+    const doneN=items.filter(i=>ck[i.k]).length+todo.filter(z=>z.d).length;
+    const totN=items.length+todo.length;
+    const past=x.dt&&x.dt<td;
+    return `<div class="card" style="${x.id===nextId?'border-color:var(--acc2);border-width:2px':''}">
+      <details ${x.id===nextId?"open":""}>
+      <summary><b>${esc(sessNo(x)||"")}</b> ${x.dt} (${wday(x.dt)}) ${x.st?esc(x.st+"-"+x.en):""}
+        ${x.id===nextId?`<span class="chip" style="background:var(--acc2);color:#fff">${t.syNext}</span>`:past?`<span class="chip">${t.syPast}</span>`:""}
+        <span class="chip" id="prog-${x.id}">${totN?t.syDone(doneN,totN):""}</span><br>${esc(String(x.t||"").replace(/^[^ ]+ /,""))}</summary>
+      <div style="margin-top:10px">
+        ${x.g?`<div class="sub"><b>${t.syGoals}</b><br>${esc(x.g)}</div>`:""}
+        ${x.c?`<div class="sub" style="margin-top:6px"><b>${t.syContent}</b><br>${esc(x.c)}</div>`:""}
+        ${x.kw?`<div class="sub" style="margin-top:6px"><b>${t.syKw}</b> ${esc(x.kw)}</div>`:""}
+        ${(x.rd||[]).length?`<div class="sub" style="margin-top:8px"><b>${t.syRead}</b><br>${x.rd.map(r=>{const b=bookById(r.b);
+          return `<span class="chip" style="${bookHave(b)?'':'color:var(--bad)'}">${bookHave(b)?"✅":"❌"} ${esc(b?b.t:r.b)} ${esc(r.p||"")}</span>`;}).join(" ")}</div>`:""}
+        ${(x.rf||[]).length?`<div class="sub" style="margin-top:6px"><b>${t.syRef}</b><br>${x.rf.map(r=>"・"+esc(r)).join("<br>")}</div>`:""}
+        ${x.pre?`<div class="alert" style="margin-top:8px">${esc(x.pre)}</div>`:""}
+
+        <h2 style="margin-top:12px">${t.syCk}</h2>
+        ${items.map(i=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:3px 0">
+          <input type="checkbox" ${ck[i.k]?"checked":""} onchange="ckToggle('${x.id}','${i.k}',this.checked)">
+          <span class="${ck[i.k]?'done':''}" style="flex:1;font-size:.83rem;${i.warn?'color:var(--bad)':''}">${esc(i.t)}</span></div>`).join("")
+          ||`<div class="sub">${t.syCkNone}</div>`}
+        ${todo.map((z,i)=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:3px 0">
+          <input type="checkbox" ${z.d?"checked":""} onchange="byId(S.sessions,'${x.id}').todo[${i}].d=this.checked;save()">
+          <span class="${z.d?'done':''}" style="flex:1;font-size:.83rem">${esc(z.t)}</span>
+          <span class="del" onclick="byId(S.sessions,'${x.id}').todo.splice(${i},1);save()">×</span></div>`).join("")}
+        <div style="display:flex;gap:6px;margin-top:6px"><input id="ck-${x.id}" placeholder="${t.syCkAdd}">
+          <button class="btn small" onclick="ckAdd('${x.id}')">${t.add}</button></div>
+
+        <h2 style="margin-top:12px">${t.syMat}</h2>
+        ${mats.length?mats.map((m,i)=>`<div style="display:flex;gap:8px;align-items:center;padding:3px 0;font-size:.83rem">
+          <span style="flex:1">${/^https?:\/\//.test(m.u||"")?`<a href="${esc(m.u)}" target="_blank" rel="noopener">${esc(m.t)}</a>`:esc(m.t)+(m.u?`<span class="sub"> — ${esc(m.u)}</span>`:"")}</span>
+          <span class="del" onclick="byId(S.sessions,'${x.id}').mats.splice(${i},1);save()">×</span></div>`).join(""):`<div class="sub">${t.syMatNone}</div>`}
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+          <input id="mt-${x.id}" placeholder="${t.syMatAdd}" style="flex:1;min-width:120px">
+          <input id="mu-${x.id}" placeholder="${t.syMatUrl}" style="flex:1;min-width:140px">
+          <button class="btn small" onclick="matAdd('${x.id}')">${t.add}</button></div>
+
+        <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn small gray" onclick="noteForSess2('${x.id}')">${t.syNote}</button>
+          <button class="btn small gray" onclick="trFromSess('${x.id}')">${t.syTr}</button>
+          <a class="btn small gray" style="text-decoration:none" href="${gcalLink(sessItem(x))}" target="_blank" rel="noopener">📅</a></div>
+      </div></details></div>`;}).join("")}`;
+}
+
+/* ---------- Asisten terjemahan sebagai jendela (bisa dibuka dari mana saja) ---------- */
+function trModal(prefill){
+  let el=document.getElementById("trModal");
+  if(!el){ el=document.createElement("div"); el.id="trModal"; document.body.appendChild(el); }
+  const t=T();
+  el.className="modal";
+  el.innerHTML=`<div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2 style="margin:0">${t.trTitle}</h2><button class="btn small gray" onclick="trClose()">${t.trClose}</button></div>
+    <div class="sub" style="margin-top:6px">${t.trIntro}</div>
+    <textarea id="trSrc" rows="6" placeholder="${t.trSrcPh}" style="margin-top:8px">${esc(prefill||"")}</textarea>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;align-items:center">
+      <span class="sub">${t.trTo}</span>
+      <select id="trTo" style="width:auto"><option value="id">Bahasa Indonesia</option><option value="en">English</option><option value="ja-easy">やさしい日本語</option></select>
+      <span class="sub">${t.trMode}</span>
+      <select id="trMode" style="width:auto">${Object.entries(t.trModes).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn small gray" onclick="trGoogle()">${t.trG}</button>
+      <button class="btn small gray" id="trCp" onclick="trCopyPrompt()">${t.trCopy}</button></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px">
+      <span class="sub">${t.trKey}</span>
+      <input id="trKey" type="password" value="${esc(S.settings.aiKey||"")}" placeholder="sk-ant-..." style="flex:1;min-width:180px" onchange="S.settings.aiKey=this.value.trim();saveQuiet()">
+      <select id="trModel" style="width:auto" onchange="S.settings.aiModel=this.value;saveQuiet()">
+        ${[["claude-opus-5","Opus 5"],["claude-sonnet-5","Sonnet 5"],["claude-haiku-4-5","Haiku 4.5"]].map(([v,l])=>`<option value="${v}" ${(S.settings.aiModel||"claude-opus-5")===v?"selected":""}>${l}</option>`).join("")}</select>
+      <button class="btn small" onclick="trRun()">${t.trRun}</button></div>
+    <div class="small-note">${t.trWarn}</div>
+    <div id="trOut" class="sub" style="margin-top:10px;white-space:pre-wrap;line-height:1.75"></div></div>`;
+  el.onclick=e=>{ if(e.target===el) trClose(); };
+  document.body.style.overflow="hidden";
+}
+function trClose(){ const el=document.getElementById("trModal"); if(el) el.remove(); document.body.style.overflow=""; }
 
 render();
 verInit();
